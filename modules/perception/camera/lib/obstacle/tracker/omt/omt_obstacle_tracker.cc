@@ -361,7 +361,7 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
   for (auto &target : targets_) {
     target.RemoveOld(frame_list_.OldestFrameId());
     ++target.lost_age;
-  }//从已跟踪物体列表中去除在此最早帧图像之前的帧中检测得到的物体 target为期望得到检测框匹配的跟踪目标
+  }//从已跟踪物体列表中去除在此最早帧图像之前的帧中检测得到的物体 target为期望得到检测框匹配的跟踪目标列表(即之前帧已加入跟踪列表但是最近可能没有检测目标与其匹配)
 
   TrackObjectPtrs track_objects; //该帧中跟踪物体列表(临时)
   for (size_t i = 0; i < frame->detected_objects.size(); ++i) { //循环此帧已检测目标
@@ -486,3 +486,4 @@ REGISTER_OBSTACLE_TRACKER(OMTObstacleTracker);
 }  // namespace camera
 }  // namespace perception
 }  // namespace apollo
+
