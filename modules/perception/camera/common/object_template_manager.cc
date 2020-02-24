@@ -30,20 +30,20 @@ namespace perception {
 namespace camera {
 
 std::vector<base::ObjectSubType> kTypeCanBeRef = {base::ObjectSubType::CAR,
-                                                  base::ObjectSubType::VAN};
+                                                  base::ObjectSubType::VAN};//可以用于作为参考的类型
 
 std::vector<base::ObjectSubType> kTypeRefinedByTemplate = {
     base::ObjectSubType::CAR,        base::ObjectSubType::VAN,
     base::ObjectSubType::BUS,        base::ObjectSubType::TRUCK,
     base::ObjectSubType::PEDESTRIAN, base::ObjectSubType::TRAFFICCONE,
     base::ObjectSubType::CYCLIST,    base::ObjectSubType::MOTORCYCLIST,
-};
+};//通过模板矫正的目标类
 
 std::vector<base::ObjectSubType> kTypeRefinedByRef = {
     base::ObjectSubType::BUS,        base::ObjectSubType::TRUCK,
     base::ObjectSubType::PEDESTRIAN, base::ObjectSubType::TRAFFICCONE,
     base::ObjectSubType::CYCLIST,    base::ObjectSubType::MOTORCYCLIST,
-    base::ObjectSubType::TRICYCLIST};
+    base::ObjectSubType::TRICYCLIST};//根据参考类型进行矫正的类型
 
 ObjectTemplateManager::ObjectTemplateManager() {}
 

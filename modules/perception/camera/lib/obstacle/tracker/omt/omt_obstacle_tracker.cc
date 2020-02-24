@@ -54,7 +54,7 @@ bool OMTObstacleTracker::Init(const ObstacleTrackerInitOptions &options) {
   similar_.reset(new GPUSimilar);
   width_ = options.image_width;
   height_ = options.image_height;
-  reference_.Init(omt_param_.reference(), width_, height_);//jac!!20/1/11:传入omt.proto和config.pt中参数，
+  reference_.Init(omt_param_.reference(), width_, height_);//jac!!20/1/11:传入omt.proto和config.pt中参数， 地平面参考类的初始化
   std::string type_change_cost =
       GetAbsolutePath(options.root_dir, omt_param_.type_change_cost());//jac??20/1/11:并不明白这各type_change_cost（12*12）的含义
   std::ifstream fin(type_change_cost);
@@ -106,7 +106,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
             base::RectF rect2(box2);
             score -= std::abs((rect1.width - rect2.width) *
                               (rect1.height - rect2.height) /
-                              (rect1.width * rect1.height));
+                              (rect1.width * rect1.height)); //宽高差异程度
             count += 1;
           }
           ++index1;
@@ -124,7 +124,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
       hypo.target = static_cast<int>(i);
       hypo.object = static_cast<int>(j);
       hypo.score = (count > 0) ? score / static_cast<float>(count) : 0;
-      if (hypo.score < omt_param_.target_combine_iou_threshold()) {
+      if (hypo.score < omt_param_.target_combine_iou_threshold()) { //0.6
         continue;
       }
       score_list.push_back(hypo);
@@ -135,7 +135,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
   for (auto &pair : score_list) {
     if (used_target[pair.target] || used_target[pair.object]) {
       continue;
-    }
+    }//这里应该只是借用了Hypothesis这个结构，实际上两个都是target
     int index1 = pair.target;
     int index2 = pair.object;
     if (targets_[pair.target].id > targets_[pair.object].id) {
@@ -146,13 +146,13 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
     Target &target_del = targets_[index2];
     for (int i = 0; i < target_del.Size(); i++) {
       // no need to change track_id of all objects in target_del
-      target_save.Add(target_del[i]);
+      target_save.Add(target_del[i]); //将原target_del中的obj据为己有
     }
     std::sort(
         target_save.tracked_objects.begin(), target_save.tracked_objects.end(),
         [](const TrackObjectPtr object1, const TrackObjectPtr object2) -> bool {
           return object1->indicator.frame_id < object2->indicator.frame_id;
-        });
+        });//将targe_save.tracked_objects按照帧的id由小到大排序
     target_save.latest_object = target_save.get_object(-1);
     base::ObjectPtr object = target_del.latest_object->object;
     target_del.Clear();
@@ -275,7 +275,7 @@ float OMTObstacleTracker::ScoreOverlap(const Target &target,
   float iou = common::CalculateIOUBBox(box_target, box_obj);
   return iou;
 }
-
+//将box_origin进行按照transform变换(齐次坐标)
 void ProjectBox(const base::BBox2DF &box_origin,
                 const Eigen::Matrix3d &transform,
                 base::BBox2DF *box_projected) {
@@ -415,19 +415,19 @@ void OMTObstacleTracker::ClearTargets() {
   int left = 0;
   int end = static_cast<int>(targets_.size() - 1);
   while (left <= end) {
-    if ((targets_[left].Size() == 0)) {
+    if ((targets_[left].Size() == 0)) {//左边先找一个为空的，然后从后边依次往前找
       while ((left < end) && (targets_[end].Size() == 0)) {
         --end;
-      }
+      }//一直到targets_[end]有tracked_obj
       if (left >= end) {
         break;
       }
-      targets_[left] = targets_[end];
+      targets_[left] = targets_[end]; //往前填补
       --end;
     }
     ++left;
   }
-  targets_.erase(targets_.begin() + left, targets_.end());
+  targets_.erase(targets_.begin() + left, targets_.end());//将往前填补的target的原位置的target删除掉
 }
 
 bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,

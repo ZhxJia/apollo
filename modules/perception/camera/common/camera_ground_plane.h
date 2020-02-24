@@ -113,7 +113,7 @@ class CameraGroundPlaneDetector {
     memcpy(k_mat_, k_mat.data(), sizeof(float) * 9);
     width_ = width;
     height_ = height;
-    baseline_ = baseline;
+    baseline_ = baseline;// 1/f
     ss_flt_.resize(max_nr_samples * 2);
     ss_int_.resize(max_nr_samples * 2);
   }

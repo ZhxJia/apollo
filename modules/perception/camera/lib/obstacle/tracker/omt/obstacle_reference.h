@@ -31,9 +31,9 @@ namespace perception {
 namespace camera {
 
 struct Reference {
-  float area = 0.0f;
-  float k = 0.0f;
-  float ymax = 0.0f;
+  float area = 0.0f; //box的面积
+  float k = 0.0f;    //object.H/box.h
+  float ymax = 0.0f; //box的bottom right
 };
 
 class ObstacleReference {

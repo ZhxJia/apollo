@@ -31,7 +31,7 @@ void ObstacleReference::Init(const omt::ReferenceParam &ref_param, float width,
   img_width_ = width;
   img_height_ = height;
   ref_width_ = static_cast<int>(
-      width / static_cast<float>(ref_param.down_sampling()) + 1);
+      width / static_cast<float>(ref_param.down_sampling()) + 1);//down_sampling :25 默认40
   ref_height_ = static_cast<int>(
       height / static_cast<float>(ref_param.down_sampling()) + 1);
   static const float k =
@@ -40,7 +40,7 @@ void ObstacleReference::Init(const omt::ReferenceParam &ref_param, float width,
   init_ref_map_.resize(ref_height_);
   for (int y = 0; y < ref_height_; ++y) {
     init_ref_map_[y].resize(ref_width_, -1);
-    if (y < ref_height_ / 2 || y > ref_height_ - ref_param_.margin()) {
+    if (y < ref_height_ / 2 || y > ref_height_ - ref_param_.margin()) { //margin:2
       continue;
     }
     for (int x = ref_param.margin(); x < ref_width_ - ref_param.margin(); ++x) {
@@ -66,7 +66,7 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
     ref_map = init_ref_map_;
   }
   for (auto &&reference : refs) {
-    reference.area *= ref_param_.area_decay();
+    reference.area *= ref_param_.area_decay();//0.98
   }
   for (auto &&target : targets) {
     if (!target.isTracked()) {
@@ -78,14 +78,14 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
     auto obj = target[-1]->object;
     if (!Contain(object_template_manager_->TypeCanBeRef(), obj->sub_type)) {
       continue;
-    }
+    }//判断此obj是否是可以用于参考的类型CAN VAN
     auto &box = obj->camera_supplement.box;
 
-    if (box.ymax - box.ymin < ref_param_.min_allow_height()) {
+    if (box.ymax - box.ymin < ref_param_.min_allow_height()) { //50
       continue;
     }
     if (box.ymax < frame->camera_k_matrix(1, 2) + 1) {
-      continue;
+      continue; // y_max < c_y
     }
     CHECK(box.ymax < img_height_ + 1) << box.ymax;
     CHECK(box.xmax < img_width_ + 1) << box.xmax;
@@ -95,7 +95,7 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
     AINFO << "Target: " << target.id
           << " can be Ref. Type: " << base::kSubType2NameMap.at(obj->sub_type);
     int y_discrete =
-        static_cast<int>(y / static_cast<float>(ref_param_.down_sampling()));
+        static_cast<int>(y / static_cast<float>(ref_param_.down_sampling())); //y/25
     int x_discrete =
         static_cast<int>(x / static_cast<float>(ref_param_.down_sampling()));
     if (ref_map[y_discrete][x_discrete] == 0) {
@@ -103,7 +103,7 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
       r.area = box.Area();
       r.ymax = y;
       r.k = obj->size[2] / (y - box.ymin);
-      refs.push_back(r);
+      refs.push_back(r); //jac:对应每个target的
       ref_map[y_discrete][x_discrete] = static_cast<int>(refs.size());
     } else if (ref_map[y_discrete][x_discrete] > 0) {
       int index = ref_map[y_discrete][x_discrete] - 1;
@@ -153,7 +153,7 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
       float min_template_volume = 0.0f;
       float max_template_volume = 0.0f;
       auto min_tmplt = kMinTemplateHWL.at(obj->sub_type);
-      auto max_tmplt = kMaxTemplateHWL.at(obj->sub_type);
+      auto max_tmplt = kMaxTemplateHWL.at(obj->sub_type); //该目标的类型的最小和最大模板尺寸
       min_template_volume = min_tmplt[0] * min_tmplt[1] * min_tmplt[2];
       max_template_volume = max_tmplt[0] * max_tmplt[1] * max_tmplt[2];
       if (volume_object < min_template_volume ||
@@ -168,19 +168,19 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
         obj->size[1] = max_tmplt[1];
         obj->size[2] = max_tmplt[0];
       }
-    }
+    }//跟据模板的最小最大尺寸进行限制
 
     if (Contain(object_template_manager_->TypeRefinedByRef(), obj->sub_type)) {
       std::string sensor = frame->data_provider->sensor_name();
       std::vector<float> height;
 
       double z_obj = frame->camera_k_matrix(1, 1) * obj->size[2] /
-                     (supplement.box.ymax - supplement.box.ymin); //depth = f*(H/h)
+                     (supplement.box.ymax - supplement.box.ymin); //depth = f*(H/h) 估计了深度
 
       // h from ground detection
       SyncGroundEstimator(sensor, frame->camera_k_matrix,
                           static_cast<int>(img_width_),
-                          static_cast<int>(img_height_));
+                          static_cast<int>(img_height_));//根据sensor名称初始化了
       auto &ground_estimator = ground_estimator_mapper_[sensor];
       float l[3] = {0};
       if (ground_estimator.GetGroundModel(l)) {
@@ -189,7 +189,7 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
         double z_ground = common::IRec(z_ground_reversed);
         z_ground = std::max(z_ground, z_obj);
         float k2 = static_cast<float>(z_ground / frame->camera_k_matrix(1, 1));
-        float h = k2 * (supplement.box.ymax - supplement.box.ymin);
+        float h = k2 * (supplement.box.ymax - supplement.box.ymin); //通过参考计算的高度h
         h = std::max(std::min(h, kMaxTemplateHWL.at(obj->sub_type).at(0)),
                      kMinTemplateHWL.at(obj->sub_type).at(0));
         height.push_back(h);
