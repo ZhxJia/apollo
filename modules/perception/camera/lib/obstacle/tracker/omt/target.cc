@@ -67,7 +67,7 @@ void Target::Init(const omt::TargetParam &param) {
   id = -1;
   lost_age = 0;
 
-  world_lwh.SetWindow(param.world_lhw_history());
+  world_lwh.SetWindow(param.world_lhw_history()); //15
   world_lwh_for_unmovable.SetWindow(param.world_lhw_history());
   image_wh.SetAlpha(param.image_wh_update_rate());
   // TODO(gaohan)  should update variance when predict and update
@@ -132,15 +132,15 @@ void Target::Update2D(CameraFrame *frame) {
   auto obj = latest_object->object;
   float width = static_cast<float>(frame->data_provider->src_width());
   float height = static_cast<float>(frame->data_provider->src_height());
-  base::RectF rect(latest_object->projected_box);
+  base::RectF rect(latest_object->projected_box); //单位为m
   base::Point2DF center = rect.Center();
 
   if (!isLost()) {
     Eigen::Vector2d measurement;
     measurement << rect.width, rect.height;
-    image_wh.AddMeasure(measurement);
+    image_wh.AddMeasure(measurement);//一阶低通filter
     measurement << center.x, center.y;
-    image_center.Correct(measurement);
+    image_center.Correct(measurement);//Kalman_Filter
 
     // update 2d bbox size
     Eigen::Vector4d state;
@@ -153,8 +153,8 @@ void Target::Update2D(CameraFrame *frame) {
     rect.width = static_cast<float>(shape(0));
     rect.height = static_cast<float>(shape(1));
     rect.SetCenter(center);
-    RefineBox(rect, width, height, &rect);
-    latest_object->projected_box = rect;
+    RefineBox(rect, width, height, &rect);//后处理box (截断)
+    latest_object->projected_box = rect;//得到该target最近最近检测物体的projected_box
   }
 }
 
@@ -307,7 +307,7 @@ void Target::Update3D(CameraFrame *frame) {
 }
 
 void Target::UpdateType(CameraFrame *frame) {
-  auto object = latest_object->object;
+  auto object = latest_object->object; //latest_object在Target::Add()时更新 为该target的最新obj
   if (!isLost()) {
     base::RectF rect(object->camera_supplement.box);
     // 1.  6mm: reliable z is 40. intrinsic is approximate 2000
@@ -318,12 +318,12 @@ void Target::UpdateType(CameraFrame *frame) {
     float alpha = gaussian(
         rect.height /
             (50 * (kMidTemplateHWL.at(object->sub_type).at(0) + 0.01f)),
-        1.0f, target_param_.type_filter_var());
+        1.0f, target_param_.type_filter_var());//~N(mu=1.0,sigma=0.3)  反映了object的box_height与模板中等高度的接近程度
     alpha = std::max(0.01f, alpha);
 
-    type_probs[static_cast<int>(object->sub_type)] += alpha;
+    type_probs[static_cast<int>(object->sub_type)] += alpha; //该target同类型的probs会往上叠加(在不同帧之间)
     auto max_prob = std::max_element(type_probs.begin(), type_probs.end());
-    auto index = static_cast<int>(std::distance(type_probs.begin(), max_prob));
+    auto index = static_cast<int>(std::distance(type_probs.begin(), max_prob));//max_prob所对应的索引
     type = static_cast<base::ObjectSubType>(index);
     ADEBUG << "Target " << id << " change type from "
            << static_cast<int>(object->sub_type) << " to "
@@ -332,9 +332,9 @@ void Target::UpdateType(CameraFrame *frame) {
 
     Eigen::Vector4d size_measurement;
     size_measurement << alpha, object->size(0), object->size(1),
-        object->size(2);
-    world_lwh.AddMeasure(size_measurement);
-    world_lwh_for_unmovable.AddMeasure(size_measurement);
+        object->size(2);//该object与模板的相似度，长,宽,高
+    world_lwh.AddMeasure(size_measurement);//添加测量值，由大到小排序截断window长度
+    world_lwh_for_unmovable.AddMeasure(size_measurement);//得到测量值的均值和方差
     // update 3d object size
     if (object->type == base::ObjectType::UNKNOWN_UNMOVABLE) {
       object->size =

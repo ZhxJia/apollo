@@ -156,7 +156,7 @@ void MeanFilter::AddMeasure(const Eigen::VectorXd &z) {
   for (int i = 0; i < n; ++i) {
     state_ += measures_[i];
   }
-  state_ = state_ / n;
+  state_ = state_ / n;//得到测量的均值
 
   variance_.resize(state_.rows(), state_.rows());
   variance_.setConstant(0);
@@ -166,7 +166,7 @@ void MeanFilter::AddMeasure(const Eigen::VectorXd &z) {
   }
   if (n > 1) {
     variance_ /= n - 1;
-  }
+  }//得到测量的方差
 }
 
 const Eigen::VectorXd &MeanFilter::get_state() const { return state_; }
@@ -202,9 +202,9 @@ void MaxNMeanFilter::SetWindow(int window) {
 
 void MaxNMeanFilter::AddMeasure(const Eigen::VectorXd &z) {
   measures_.push_back(z);
-  std::sort(measures_.begin(), measures_.end(), customLess);
+  std::sort(measures_.begin(), measures_.end(), customLess); //由大到小排序
   if (measures_.size() > static_cast<unsigned int>(window_)) {
-    measures_.resize(window_);
+    measures_.resize(window_); //由大到小截断window长度
   }
 }
 

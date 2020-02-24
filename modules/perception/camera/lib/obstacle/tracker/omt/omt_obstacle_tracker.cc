@@ -81,10 +81,10 @@ std::string OMTObstacleTracker::Name() const { return "OMTObstacleTracker"; }
 bool OMTObstacleTracker::CombineDuplicateTargets() {
   std::vector<Hypothesis> score_list;
   Hypothesis hypo;
-  for (size_t i = 0; i < targets_.size(); ++i) {
+  for (size_t i = 0; i < targets_.size(); ++i) { 
     if (targets_[i].Size() == 0) {
       continue;
-    }
+    }//判断该target是否存在tracked_obj
     for (size_t j = i + 1; j < targets_.size(); ++j) {
       if (targets_[j].Size() == 0) {
         continue;
@@ -94,14 +94,14 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
       int index1 = 0;
       int index2 = 0;
       while (index1 < targets_[i].Size() && index2 < targets_[j].Size()) {
-        auto p1 = targets_[i][index1];
-        auto p2 = targets_[j][index2];
+        auto p1 = targets_[i][index1]; //对应第i个target的第index1个tracked_object
+        auto p2 = targets_[j][index2]; //对应第j个target的第index2个tracked_object
         if (std::abs(p1->timestamp - p2->timestamp) <
-            omt_param_.same_ts_eps()) {
+            omt_param_.same_ts_eps()) { //same_ts_eps = 0.05
           if (p1->indicator.sensor_name != p2->indicator.sensor_name) {
             auto box1 = p1->projected_box;
             auto box2 = p2->projected_box;
-            score += common::CalculateIOUBBox(box1, box2);
+            score += common::CalculateIOUBBox(box1, box2); //计算这两个target各tracked_object之间的iou
             base::RectF rect1(box1);
             base::RectF rect2(box2);
             score -= std::abs((rect1.width - rect2.width) *
@@ -129,7 +129,7 @@ bool OMTObstacleTracker::CombineDuplicateTargets() {
       }
       score_list.push_back(hypo);
     }
-  }
+  }//判断两个target之间的相似性
   sort(score_list.begin(), score_list.end(), std::greater<Hypothesis>());
   std::vector<bool> used_target(targets_.size(), false);
   for (auto &pair : score_list) {
@@ -393,7 +393,7 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
       target.UpdateType(frame);
       target.Update2D(frame);
     }
-  }
+  }//清理超过存活周期的target
 
   CombineDuplicateTargets();
   ClearTargets();

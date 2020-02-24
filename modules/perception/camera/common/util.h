@@ -102,7 +102,7 @@ void RefineBox(const base::Rect<T> &box_in, const T width, const T height,
   if (box_out->y < 0) {
     box_out->height += box_out->y;
     box_out->y = 0;
-  }
+  }//??box
   if (box_out->x >= width) {
     box_out->x = 0;
     box_out->width = 0;
