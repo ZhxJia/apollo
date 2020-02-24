@@ -29,7 +29,7 @@ inline Dtype sigmoid(Dtype x) {
 template <typename Dtype>
 inline Dtype gaussian(Dtype x, Dtype mu, Dtype sigma) {
   return static_cast<Dtype>(
-      std::exp(-(x - mu) * (x - mu) / (2 * sigma * sigma)));
+      std::exp(-(x - mu) * (x - mu) / (2 * sigma * sigma)));//高斯分布
 }
 template <typename Dtype>
 Dtype sqr(Dtype x) {

@@ -38,7 +38,7 @@ bool Equal(double x, double target, double eps = 1e-6);
 template <typename T>
 bool IsCovered(const base::Rect<T> &rect1, const base::Rect<T> &rect2,
                float thresh) {
-  base::RectF inter = rect1 & rect2;
+  base::RectF inter = rect1 & rect2; //区域交集
   return inter.Area() / rect1.Area() > thresh;
 }
 template <typename T>

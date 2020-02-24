@@ -39,20 +39,20 @@ TrackObjectPtr Target::get_object(int index) const {
   CHECK_GE(index, -static_cast<int>(tracked_objects.size()));
   return tracked_objects[(index + tracked_objects.size()) %
                          tracked_objects.size()];
-}
+} // index可以为负,-1表示最新
 void Target::Add(TrackObjectPtr object) {
   if (tracked_objects.empty()) {
     start_ts = object->timestamp;
-    id = Target::global_track_id++;
+    id = Target::global_track_id++; //给该target分配跟踪id
     type = object->object->sub_type;
-  }
+  }//该target之前没有任何跟踪的目标
   object->object->track_id = id;
-  object->object->tracking_time = object->timestamp - start_ts;
-  object->object->latest_tracked_time = object->timestamp;
+  object->object->tracking_time = object->timestamp - start_ts;//被跟踪物体存在时长
+  object->object->latest_tracked_time = object->timestamp;     //最近测量的时间戳
   latest_object = object;
   lost_age = 0;
   tracked_objects.push_back(object);
-}
+}//将匹配的object添加到该target的tracked_objects中
 void Target::RemoveOld(int frame_id) { //最早之前的获取图像的帧的id
   size_t index = 0;
   while (index < tracked_objects.size() &&
@@ -484,7 +484,7 @@ bool Target::CheckStatic() {
 }
 
 bool Target::isTracked() const {
-  return Size() >= target_param_.tracked_life();
+  return Size() >= target_param_.tracked_life(); //3
 }
 bool Target::isLost() const { return lost_age > 0; }
 

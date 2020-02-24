@@ -172,37 +172,37 @@ void OMTObstacleTracker::GenerateHypothesis(const TrackObjectPtrs &objects) {
     for (size_t j = 0; j < objects.size(); ++j) {
       hypo.target = static_cast<int>(i);
       hypo.object = static_cast<int>(j);
-      float sa = ScoreAppearance(targets_[i], objects[j]);
-      float sm = ScoreMotion(targets_[i], objects[j]);
-      float ss = ScoreShape(targets_[i], objects[j]);
-      float so = ScoreOverlap(targets_[i], objects[j]);
+      float sa = ScoreAppearance(targets_[i], objects[j]);  //获取该新检测目标与该target的匹配过的tracked_objects的平均余弦相似性
+      float sm = ScoreMotion(targets_[i], objects[j]);      //该track_obj的中心坐标在target的高斯分布中的位置(即与traget的偏离程度)
+      float ss = ScoreShape(targets_[i], objects[j]);       //track_obj的weight,height与target的weight,height的偏离程度
+      float so = ScoreOverlap(targets_[i], objects[j]);     //计算target与object的iou
       if (sa == 0) {
-        hypo.score = omt_param_.weight_diff_camera().motion() * sm +
-                     omt_param_.weight_diff_camera().shape() * ss +
-                     omt_param_.weight_diff_camera().overlap() * so;
+        hypo.score = omt_param_.weight_diff_camera().motion() * sm +  //0.5
+                     omt_param_.weight_diff_camera().shape() * ss +   //0.15
+                     omt_param_.weight_diff_camera().overlap() * so;  //0.35
       } else {
-        hypo.score = (omt_param_.weight_same_camera().appearance() * sa +
-                      omt_param_.weight_same_camera().motion() * sm +
-                      omt_param_.weight_same_camera().shape() * ss +
-                      omt_param_.weight_same_camera().overlap() * so);
+        hypo.score = (omt_param_.weight_same_camera().appearance() * sa + //0.45   //相同相机之间才有apperance
+                      omt_param_.weight_same_camera().motion() * sm +     //0.4
+                      omt_param_.weight_same_camera().shape() * ss +      //0.15
+                      omt_param_.weight_same_camera().overlap() * so);    //0.05
       }
-      int change_from_type = static_cast<int>(targets_[i].type);
+      int change_from_type = static_cast<int>(targets_[i].type); //由类型所对应的索引
       int change_to_type = static_cast<int>(objects[j]->object->sub_type);
-      hypo.score += -kTypeAssociatedCost_[change_from_type][change_to_type];
+      hypo.score += -kTypeAssociatedCost_[change_from_type][change_to_type]; //kTypeAssociatedCost 由type_chage_cost这个文件导入12*12矩阵 类型切换的代价
       ADEBUG << "Detection " << objects[j]->indicator.frame_id << "(" << j
              << ") sa:" << sa << " sm: " << sm << " ss: " << ss << " so: " << so
              << " score: " << hypo.score;
 
       // 95.44% area is range [mu - sigma*2, mu + sigma*2]
       // don't match if motion is beyond the range
-      if (sm < 0.045 || hypo.score < omt_param_.target_thresh()) {
+      if (sm < 0.045 || hypo.score < omt_param_.target_thresh()) { //0.6
         continue;
       }
-      score_list.push_back(hypo);
+      score_list.push_back(hypo); //不满足条件则不对该target和object匹配
     }
-  }
+  }//获得了满足条件的target和track_object的匹配分数
 
-  sort(score_list.begin(), score_list.end(), std::greater<Hypothesis>());
+  sort(score_list.begin(), score_list.end(), std::greater<Hypothesis>());//由大到小排序分配
   std::vector<bool> used_target(targets_.size(), false);
   for (auto &pair : score_list) {
     if (used_target[pair.target] || used_[pair.object]) {
@@ -210,30 +210,30 @@ void OMTObstacleTracker::GenerateHypothesis(const TrackObjectPtrs &objects) {
     }
     Target &target = targets_[pair.target];
     auto det_obj = objects[pair.object];
-    target.Add(det_obj);
-    used_[pair.object] = true;
-    used_target[pair.target] = true;
+    target.Add(det_obj); //将det_obj添加到给定的target的tracked_objects中,并将该target的lost_age清零
+    used_[pair.object] = true; //表明该检测目标已被占用
+    used_target[pair.target] = true; //该target已被det_obj成功匹配
     AINFO << "Target " << target.id << " match " << det_obj->indicator.frame_id
           << " (" << pair.object << ")"
           << "at " << pair.score << " size: " << target.Size();
-  }
+  }//target匹配第(frame_id)帧中的第几个检测物,size:该target中tracked_objects的大小
 }
-
+//jac??2/24:按理说一个target中有许多track_object,为什么state却是对于target总体而言,而不是每个object一个state??
 float OMTObstacleTracker::ScoreMotion(const Target &target,
                                       TrackObjectPtr track_obj) {
-  Eigen::Vector4d x = target.image_center.get_state();
+  Eigen::Vector4d x = target.image_center.get_state();//获取之前Predict得到的Kalman滤波器的估计状态
   float target_centerx = static_cast<float>(x[0]);
   float target_centery = static_cast<float>(x[1]);
   base::Point2DF center = track_obj->projected_box.Center();
   base::RectF rect(track_obj->projected_box);
   float s = gaussian(center.x, target_centerx, rect.width) *
-            gaussian(center.y, target_centery, rect.height);
+            gaussian(center.y, target_centery, rect.height); //该track_obj的中心坐标在target的高斯分布中的位置(即与traget的偏离程度)
   return s;
 }
 
 float OMTObstacleTracker::ScoreShape(const Target &target,
                                      TrackObjectPtr track_obj) {
-  Eigen::Vector2d shape = target.image_wh.get_state();
+  Eigen::Vector2d shape = target.image_wh.get_state(); //image_wh采用的是一阶低通滤波器
   base::RectF rect(track_obj->projected_box);
   float s = static_cast<float>((shape[1] - rect.height) *
                                (shape[0] - rect.width) / (shape[1] * shape[0]));
@@ -246,17 +246,17 @@ float OMTObstacleTracker::ScoreAppearance(const Target &target,
   int count = 0;
   auto sensor_name = track_obj->indicator.sensor_name;
   for (int i = target.Size() - 1; i >= 0; --i) {
-    if (target[i]->indicator.sensor_name != sensor_name) {
-      continue;
+    if (target[i]->indicator.sensor_name != sensor_name) { //匹配的target和object应该是同一传感器检测到的
+      continue;                                            //此处target[]使用了运算符重载，实际是target中对应的tracked_objects
     }
     PatchIndicator p1 = target[i]->indicator;
     PatchIndicator p2 = track_obj->indicator;
 
-    energy += similar_map_.sim(p1, p2);
+    energy += similar_map_.sim(p1, p2); //根据patch_id获取该target中所有的待跟踪object与新object余弦相似性
     count += 1;
   }
 
-  return energy / (0.1f + static_cast<float>(count) * 0.9f);
+  return energy / (0.1f + static_cast<float>(count) * 0.9f);//获取该新检测目标与该target中所有目标的平均相似性
 }
 
 // [new]
@@ -306,45 +306,45 @@ int OMTObstacleTracker::CreateNewTarget(const TrackObjectPtrs &objects) {
   const TemplateMap &kMinTemplateHWL =
       object_template_manager_->MinTemplateHWL();
   std::vector<base::RectF> target_rects;
-  for (auto &&target : targets_) {
+  for (auto &&target : targets_) { //引用
     if (!target.isTracked() || target.isLost()) {
       continue;
     }
-    base::RectF target_rect(target[-1]->object->camera_supplement.box);
+    base::RectF target_rect(target[-1]->object->camera_supplement.box);//该target中最新检测到的object的bbox
     target_rects.push_back(target_rect);
-  }
+  }//target_rects中包含了所有target最新检测到的object的bbox
   int created_count = 0;
   for (size_t i = 0; i < objects.size(); ++i) {
     if (!used_[i]) {
       bool is_covered = false;
       const auto &sub_type = objects[i]->object->sub_type;
       base::RectF rect(objects[i]->object->camera_supplement.box);
-      auto &min_tmplt = kMinTemplateHWL.at(sub_type);
+      auto &min_tmplt = kMinTemplateHWL.at(sub_type); //获取该未分配的object的子类型,2dbbox,该类型对应模板的索引
       if (OutOfValidRegion(rect, width_, height_, omt_param_.border())) {
-        continue;
-      }
+        continue; //bbox宽高小于border的大小或大于图像的宽高,即为无效
+      }//border:20
       for (auto &&target_rect : target_rects) {
         if (IsCovered(rect, target_rect, 0.4f) ||
             IsCoveredHorizon(rect, target_rect, 0.5f)) {
-          is_covered = true;
-          break;
+          is_covered = true; //判断检测的rect是否被target_rects包含(交集区域面积或宽度达到rect的某个阈值)
+          break; 
         }
       }
       if (is_covered) {
-        continue;
+        continue;//该目标已被某个target的bbox包围
       }
       if (min_tmplt.empty()  // unknown type
-          || rect.height > min_tmplt[0] * omt_param_.min_init_height_ratio()) {
-        Target target(omt_param_.target_param());
-        target.Add(objects[i]);
-        targets_.push_back(target);
+          || rect.height > min_tmplt[0] * omt_param_.min_init_height_ratio()) { //min_init_height_ratio=17
+        Target target(omt_param_.target_param());//新建target
+        target.Add(objects[i]);//将匹配的object添加到该target的tracked_objects中
+        targets_.push_back(target);//添加新的target
         AINFO << "Target " << target.id << " is created by "
               << objects[i]->indicator.frame_id << " ("
               << objects[i]->indicator.patch_id << ")";
         created_count += 1;
-      }
-    }
-  }
+      } //新创建target的条件是：该det_obj的高度(像素)大于最小模板的高度(米)*17
+    }//根据未被分配给target的det_obj
+  }//根据当前帧的检测物体,
   return created_count;
 }
 bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
@@ -377,12 +377,12 @@ bool OMTObstacleTracker::Associate2D(const ObstacleTrackerOptions &options,
     ProjectBox(frame->detected_objects[i]->camera_supplement.box,
                frame->project_matrix, &(track_ptr->projected_box));//jac!!20/２/22:将原检测的2d box投影得到projected_box
     track_objects.push_back(track_ptr);
-  }
+  }//此循环将det_obj转换为track_obj
   reference_.CorrectSize(frame);
   used_.clear();
-  used_.resize(frame->detected_objects.size(), false);
-  GenerateHypothesis(track_objects);
-  int new_count = CreateNewTarget(track_objects);
+  used_.resize(frame->detected_objects.size(), false);//标注当前检测是否被分配，未被分配的用于新target的创建
+  GenerateHypothesis(track_objects);//target匹配第(frame_id)帧中的第几个检测物(track_object),并将该track_object加入到target的tracked_objects中
+  int new_count = CreateNewTarget(track_objects);//满足一定条件的前提下,创建新target
   AINFO << "Create " << new_count << " new target";
 
   for (auto &target : targets_) {

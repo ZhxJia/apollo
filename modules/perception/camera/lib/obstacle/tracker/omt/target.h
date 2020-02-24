@@ -49,8 +49,8 @@ struct Target {
   void UpdateType(CameraFrame *frame);
 
   int Size() const;
-  TrackObjectPtr get_object(int index) const;
-  TrackObjectPtr operator[](int index) const;
+  TrackObjectPtr get_object(int index) const; 
+  TrackObjectPtr operator[](int index) const; //下标运算符重载
 
   bool isTracked() const;
   bool isLost() const;
