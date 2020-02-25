@@ -291,16 +291,16 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   T pt_of_line_seg_l[3] = {0};
   T pt_of_line_seg_r[3] = {0};
   bool is_front_l = common::IBackprojectPlaneIntersectionCanonical(
-      ls.pt_start, k_mat, plane, pt_of_line_seg_l);
+      ls.pt_start, k_mat, plane, pt_of_line_seg_l);//pt_start -> pt_of_line_seg_l
   bool is_front_r = common::IBackprojectPlaneIntersectionCanonical(
-      ls.pt_end, k_mat, plane, pt_of_line_seg_r);
+      ls.pt_end, k_mat, plane, pt_of_line_seg_r);//将pt_start,pt_end根据平面约束进行反投影 
   if (!is_front_l || !is_front_r) {
     return;
   }
   ADEBUG << "l&r on-ground points: " << pt_of_line_seg_l[0] << ", "
          << pt_of_line_seg_l[1] << ", " << pt_of_line_seg_l[2] << " | "
          << pt_of_line_seg_r[0] << ", " << pt_of_line_seg_r[1] << ", "
-         << pt_of_line_seg_r[2];
+         << pt_of_line_seg_r[2];//得到了将bbox2d中的两个点对应的地平面中的两个3d点(相机坐标系)
 
   // get transform
   T rot[9] = {0};
@@ -311,9 +311,9 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
             pt_of_line_seg_r[2] - pt_of_line_seg_l[2]};
   T ry = static_cast<T>(-atan2(v[2], v[0]));
   GenRotMatrix(ry, rot);
-  common::ITranspose3x3(rot);
-  common::IScale3(pos, (T)-1);
-  common::IMultAx3x3(rot, pos, t);
+  common::ITranspose3x3(rot);//转置
+  common::IScale3(pos, (T)-1); //传入 -1
+  common::IMultAx3x3(rot, pos, t); //R^-1 * -pos = t
   ADEBUG << "ry: " << ry;
 
   T l[3] = {0};
@@ -322,27 +322,27 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   T pt1_local[3] = {0};
   T pt2_local[3] = {0};
 
-  // transform to local birdview coordinates
+  // transform to local birdview coordinates 鸟瞰坐标
   std::pair<T, T> range;
   range.first = 0;
   range.second = common::ISqrt(common::ISqr(v[0]) + common::ISqr(v[2]));
   T pts_local[12] = {0};
-  common::IProjectThroughExtrinsic(rot, t, pts_c, pts_local);
-  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);
+  common::IProjectThroughExtrinsic(rot, t, pts_c, pts_local);           //pts_c为相机坐标系下3dbox底面各角点的坐标
+  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);   //转为车辆坐标系pts_local
   common::IProjectThroughExtrinsic(rot, t, pts_c + 6, pts_local + 6);
   common::IProjectThroughExtrinsic(rot, t, pts_c + 9, pts_local + 9);
 
-  common::IProjectThroughExtrinsic(rot, t, pt1, pt1_local);
-  common::IProjectThroughExtrinsic(rot, t, pt2, pt2_local);
+  common::IProjectThroughExtrinsic(rot, t, pt1, pt1_local); //rot^-1(pt1 - t) 相机在车辆坐标系下的位置
+  common::IProjectThroughExtrinsic(rot, t, pt2, pt2_local); //
   T x[2] = {pt1_local[0], pt1_local[2]};
   T xp[2] = {pt2_local[0], pt2_local[2]};
-  common::ILineFit2d(x, xp, l);
+  common::ILineFit2d(x, xp, l);//通过两点x ,xp (x为相机中心在车辆坐标系下的位置，xp为车辆坐标系下车辆中心)得到直线l=ax+by+c
 
-  T zs[4] = {pts_local[2], pts_local[5], pts_local[8], pts_local[11]};
+  T zs[4] = {pts_local[2], pts_local[5], pts_local[8], pts_local[11]}; //zs 为3dbox各底面角点在车辆坐标系下的z坐标
   T z_offset = static_cast<T>(0);
   bool all_positive = zs[0] > 0.0f && zs[1] > 0.f && zs[2] > 0.f && zs[3] > 0.f;
   if (all_positive) {
-    z_offset = std::min(zs[0], std::min(zs[1], std::min(zs[2], zs[3])));
+    z_offset = std::min(zs[0], std::min(zs[1], std::min(zs[2], zs[3]))); //z补偿取最小
   } else {
     z_offset = std::max(zs[0], std::max(zs[1], std::max(zs[2], zs[3])));
     T xs[4] = {pts_local[0], pts_local[3], pts_local[6], pts_local[9]};
@@ -379,7 +379,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   center_local[1] = 0;
   center_local[2] += dz_local;
   T center_local_to_c[3] = {0};
-  common::ISub3(t, center_local);
+  common::ISub3(t, center_local);//center_local-=t
   common::IMultAtx3x3(rot, center_local, center_local_to_c);
   dx_dz[0] = center_local_to_c[0] - center_c[0];
   dx_dz[1] = center_local_to_c[2] - center_c[2];

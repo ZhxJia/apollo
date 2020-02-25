@@ -51,7 +51,7 @@ class LocationRefinerObstaclePostprocessor : public BaseObstaclePostprocessor {
                  float h_down) const {
     float x = pt[0];
     float y = pt[1];
-    if (y < v) {
+    if (y < v) {  
       return false;
     } else if (y > (img_h - h_down)) {
       return true;

@@ -41,8 +41,8 @@ bool ObjPostProcessor::PostProcessObjWithGround(
 
   // soft constraints
   bool adjust_soft =
-      AdjustCenterWithGround(bbox, hwl, *ry, options.plane, center);
-  if (center[2] > params_.dist_far) {
+      AdjustCenterWithGround(bbox, hwl, *ry, options.plane, center); //通过中心点投影位于平面内的约束进行中心点的更新。
+  if (center[2] > params_.dist_far) { //15.0
     return adjust_soft;
   }
 
@@ -64,19 +64,19 @@ bool ObjPostProcessor::AdjustCenterWithGround(const float *bbox,
                                               const float *hwl, float ry,
                                               const float *plane,
                                               float *center) const {
-  float iou_ini = GetProjectionScore(ry, bbox, hwl, center);
-  if (iou_ini < params_.iou_good) {  // ini pos is not good enough
+  float iou_ini = GetProjectionScore(ry, bbox, hwl, center); //未更新center之前的初始值
+  if (iou_ini < params_.iou_good) {  // ini pos is not good enough 0.5
     return false;
   }
-  const float MIN_COST = hwl[2] * params_.sampling_ratio_low;
+  const float MIN_COST = hwl[2] * params_.sampling_ratio_low; //*0.1
   const float EPS_COST_DELTA = 1e-1f;
-  const float WEIGHT_IOU = params_.weight_iou;
-  const int MAX_ITERATION = params_.max_nr_iter;
+  const float WEIGHT_IOU = params_.weight_iou; //3.0
+  const int MAX_ITERATION = params_.max_nr_iter; //5
 
-  float lr = params_.learning_r;
+  float lr = params_.learning_r; //0.2
   float cost_pre = FLT_MAX;
   float cost_delta = 0.0f;
-  float center_input[3] = {center[0], center[1], center[2]};
+  float center_input[3] = {center[0], center[1], center[2]}; //注意此处object_center[1] += h/2
   float center_test[3] = {0};
   float x[3] = {0};
   int iter = 1;
@@ -84,19 +84,19 @@ bool ObjPostProcessor::AdjustCenterWithGround(const float *bbox,
 
   // std::cout << "start to update the center..." << std::endl;
   while (!stop) {
-    common::IProjectThroughIntrinsic(k_mat_, center, x);
+    common::IProjectThroughIntrinsic(k_mat_, center, x); //center投影到图像坐标系 x
     x[0] *= common::IRec(x[2]);
-    x[1] *= common::IRec(x[2]);
+    x[1] *= common::IRec(x[2]);//齐次坐标
     bool in_front = common::IBackprojectPlaneIntersectionCanonical(
-        x, k_mat_, plane, center_test);
+        x, k_mat_, plane, center_test); //将此2d中心点再投影回3d,利用平面plane的约束（平面是通过标定获得的）,投影返回的3d点需要位于该平面内 
     if (!in_front) {
       memcpy(center, center_input, sizeof(float) * 3);
       return false;
-    }
+    }//如果反向投影失败
     float iou_cur = GetProjectionScore(ry, bbox, hwl, center);
-    float iou_test = GetProjectionScore(ry, bbox, hwl, center_test);
+    float iou_test = GetProjectionScore(ry, bbox, hwl, center_test);//都与检测得到的bbox比较IOU
     float dist = common::ISqrt(common::ISqr(center[0] - center_test[0]) +
-                               common::ISqr(center[2] - center_test[2]));
+                               common::ISqr(center[2] - center_test[2]));//检测得到的center与平面内的center_test的距离
     float cost_cur = dist + WEIGHT_IOU * (1.0f - (iou_cur + iou_test) / 2);
     // std::cout << "cost___ " << cost_cur << "@" << iter << std::endl;
     if (cost_cur >= cost_pre) {
@@ -105,15 +105,15 @@ bool ObjPostProcessor::AdjustCenterWithGround(const float *bbox,
       cost_delta = (cost_pre - cost_cur) / cost_pre;
       cost_pre = cost_cur;
       center[0] += (center_test[0] - center[0]) * lr;
-      center[2] += (center_test[2] - center[2]) * lr;
+      center[2] += (center_test[2] - center[2]) * lr; //更新center,与之前"Transform模块中的center更新相似",此时的依据是点的反投影位于平面
       ++iter;
       stop = iter >= MAX_ITERATION || cost_delta < EPS_COST_DELTA ||
              cost_pre < MIN_COST;
     }
-    lr *= params_.learning_r_decay;
+    lr *= params_.learning_r_decay; 
   }
   float iou_res = GetProjectionScore(ry, bbox, hwl, center);
-  if (iou_res < iou_ini * params_.shrink_ratio_iou) {
+  if (iou_res < iou_ini * params_.shrink_ratio_iou) { //0.9 IOu缩小比率，更新完center后若其iou反而缩减到原iou的0.9以下，则还是用初始值
     memcpy(center, center_input, sizeof(float) * 3);
     return false;
   }
@@ -126,7 +126,7 @@ bool ObjPostProcessor::PostRefineCenterWithGroundBoundary(
     bool check_lowerbound) const {
   bool truncated_on_bottom =
       bbox[3] >= static_cast<float>(height_) -
-                     (bbox[3] - bbox[1]) * params_.sampling_ratio_low;
+                     (bbox[3] - bbox[1]) * params_.sampling_ratio_low;// *0.1 bbox越大则阈值越低
   if (truncated_on_bottom) {
     return false;
   }
@@ -137,15 +137,15 @@ bool ObjPostProcessor::PostRefineCenterWithGroundBoundary(
   float pts_c[12] = {0};
   int x_pts[4] = {0};
 
-  GetDepthXPair(bbox, hwl, center, ry, depth_pts, x_pts, &pts_c[0]);
+  GetDepthXPair(bbox, hwl, center, ry, depth_pts, x_pts, &pts_c[0]); //pts_c为相机坐标系下3dbox底面各角点的坐标
 
   float dxdz_acc[2] = {0};
-  float ratio_x_over_z = center[0] * common::IRec(center[2]);
-  for (int i = 0; i < nr_line_segs; ++i) {
+  float ratio_x_over_z = center[0] * common::IRec(center[2]);// x/z
+  for (int i = 0; i < nr_line_segs; ++i) { //对于到目前为止的line_segs
     float dxdz[2] = {0};
     GetDxDzForCenterFromGroundLineSeg(line_seg_limits[i], plane, pts_c, k_mat_,
                                       width_, height_, ratio_x_over_z, dxdz,
-                                      check_lowerbound);
+                                      check_lowerbound); 
     dxdz_acc[0] += dxdz[0];
     dxdz_acc[1] += dxdz[1];
   }
@@ -171,7 +171,7 @@ int ObjPostProcessor::GetDepthXPair(const float *bbox, const float *hwl,
   float x_cor[4] = {l_half, l_half, -l_half, -l_half};
   float z_cor[4] = {w_half, -w_half, -w_half, w_half};
   float pts[12] = {x_cor[0], 0.0f, z_cor[0], x_cor[1], 0.0f, z_cor[1],
-                   x_cor[2], 0.0f, z_cor[2], x_cor[3], 0.0f, z_cor[3]};
+                   x_cor[2], 0.0f, z_cor[2], x_cor[3], 0.0f, z_cor[3]}; //3D box位于地面的边界框(注意y坐标之前已经减了h/2，故为0)
   float rot[9] = {0};
   GenRotMatrix(ry, rot);
   float pt_proj[3] = {0};
@@ -179,13 +179,13 @@ int ObjPostProcessor::GetDepthXPair(const float *bbox, const float *hwl,
   float *pt = pts;
   bool save_pts_c = pts_c != nullptr;
   for (int i = 0; i < 4; ++i) {
-    common::IProjectThroughExtrinsic(rot, center, pt, pt_c);
-    common::IProjectThroughIntrinsic(k_mat_, pt_c, pt_proj);
+    common::IProjectThroughExtrinsic(rot, center, pt, pt_c);//(x_cor[i], 0.0f, z_cor[i])各底面角点投影得到相机坐标系下pt_C
+    common::IProjectThroughIntrinsic(k_mat_, pt_c, pt_proj); //投影到图像平面pt_proj
     depth_pts[i] = pt_c[2];
     x_pts[i] = common::IRound(pt_proj[0] * common::IRec(pt_proj[2]));
-    int y_proj = common::IRound(pt_proj[1] * common::IRec(pt_proj[2]));
+    int y_proj = common::IRound(pt_proj[1] * common::IRec(pt_proj[2]));//齐次
     if (y_proj < y_min) {
-      y_min = y_proj;
+      y_min = y_proj;//找到底面4个底面角点投影得到的坐标 高度上的最小值
     }
     if (save_pts_c) {
       int i3 = i * 3;

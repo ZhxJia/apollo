@@ -47,7 +47,7 @@ void HistogramEstimator::Init(const HistogramEstimatorParams *params) {
   if (params != nullptr) {
     params_ = *params;
   }
-  step_bin_reversed_ = common::IRec(params_.step_bin);//jac!!20/1/13:取倒数
+  step_bin_reversed_ = common::IRec(params_.step_bin);
   assert(params_.nr_bins_in_histogram > 0);
   assert(params_.nr_bins_in_histogram <= kMaxNrBins);
   int nr_bins = params_.nr_bins_in_histogram;

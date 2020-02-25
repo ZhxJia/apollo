@@ -76,7 +76,7 @@ class ObjPostProcessor {
   bool PostProcessObjWithDispmap(const ObjPostProcessorOptions &options,
                                  float center[3], float hwl[3], float *ry);
 
- private:
+ private: //计算3d角点投影得到的bbox与检测bbox的交并比
   float GetProjectionScore(float ry, const float *bbox, const float *hwl,
                            const float *center,
                            const bool &check_truncation = true) const {

@@ -27,7 +27,7 @@ namespace camera {
 
 bool OnlineCalibrationService::Init(
     const CalibrationServiceInitOptions &options) {
-  master_sensor_name_ = options.calibrator_working_sensor_name;
+  master_sensor_name_ = options.calibrator_working_sensor_name;//front_6mm
   sensor_name_ = options.calibrator_working_sensor_name;
   // Init k_matrix 内参矩阵
   auto &name_intrinsic_map = options.name_intrinsic_map;
@@ -60,14 +60,14 @@ bool OnlineCalibrationService::Init(
   calibrator_.reset(
       BaseCalibratorRegisterer::GetInstanceByName(options.calibrator_method));//jac!!20/1/13:LaneLineClibrator
   CHECK(calibrator_ != nullptr);
-  CHECK(calibrator_->Init(calibrator_init_options))　//jac??20/1/13:calibrator 里面功能嵌套较多　没有细看　特别HistogramEstimator这个不清楚其原理　
+  CHECK(calibrator_->Init(calibrator_init_options))　
       << "Failed to init " << options.calibrator_method;
   return true;
 }
 
 bool OnlineCalibrationService::BuildIndex() {
   is_service_ready_ = HasSetIntrinsics() && HasSetGroundPlane();
-  return is_service_ready_;
+  return is_service_ready_;S
 }
 
 bool OnlineCalibrationService::QueryDepthOnGroundPlane(int x, int y,

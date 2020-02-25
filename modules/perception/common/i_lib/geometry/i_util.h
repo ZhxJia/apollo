@@ -95,12 +95,12 @@ inline void IEigSymmetric3x3Closed(const T *A, T *EV, T *Q) {
 // Compute x=[R|t]*X, assuming R is 3x3 rotation matrix and t is a 3-vector.
 template <typename T>
 inline void IProjectThroughExtrinsic(const T *R, const T *t, const T *X, T *x) {
-  IMultAx3x3(R, X, x);
+  IMultAx3x3(R, X, x);//x=RX
   IAdd3(t, x);
 }
 
 // Compute x=K*X, assuming K is 3x3 upper triangular with K[8] = 1.0, do not
-// consider radial distortion.
+// consider radial distortion. //不考虑畸变
 template <typename T>
 inline void IProjectThroughIntrinsic(const T *K, const T *X, T *x) {
   x[0] = K[0] * X[0] + K[1] * X[1] + K[2] * X[2];
@@ -191,12 +191,12 @@ template <typename T>
 inline bool IBackprojectPlaneIntersectionCanonical(const T *x, const T *K,
                                                    const T *pi, T *X) {
   IZero3(X);
-  T umcx = IDiv(x[0] - K[2], K[0]);
+  T umcx = IDiv(x[0] - K[2], K[0]);//(x[0]-k[2])/k[0]
   T vmcy = IDiv(x[1] - K[5], K[4]);
   T sf = pi[0] * umcx + pi[1] * vmcy + pi[2];
   if (sf == static_cast<T>(0.0)) {
     return false;
-  }
+  } //sf = -D/(Z),若Z无穷远(几乎平行),则返回false，即改点不能投影到平面上
   T Z = -pi[3] / sf;
   X[0] = Z * umcx;
   X[1] = Z * vmcy;

@@ -65,7 +65,7 @@ class BaseCalibrationService {
   }
 
   // @brief query ground plane in camera frame, parameterized as
-  // [n^T, d] with n^T*x+d=0
+  // [n^T, d] with n^T*x+d=0   ax+by+cz+d=0,法向量 n=(a,b,c)
   virtual bool QueryGroundPlaneInCameraFrame(
       Eigen::Vector4d *plane_param) const {
     return false;

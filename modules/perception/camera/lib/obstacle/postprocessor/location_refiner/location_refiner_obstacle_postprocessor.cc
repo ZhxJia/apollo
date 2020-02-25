@@ -60,7 +60,7 @@ bool LocationRefinerObstaclePostprocessor::Process(
   }
   float query_plane[4] = {
       static_cast<float>(plane(0)), static_cast<float>(plane(1)),
-      static_cast<float>(plane(2)), static_cast<float>(plane(3))};
+      static_cast<float>(plane(2)), static_cast<float>(plane(3))}; //通过标定获取平面的坐标(a,b,c,d)ax+by+cz+d=0
   const auto &camera_k_matrix = frame->camera_k_matrix;
   float k_mat[9] = {0};
   for (size_t i = 0; i < 3; i++) {
@@ -91,14 +91,14 @@ bool LocationRefinerObstaclePostprocessor::Process(
 
     float bottom_center[2] = {(bbox2d[0] + bbox2d[2]) / 2, bbox2d[3]};
     float h_down = (static_cast<float>(height_image) - k_mat[5]) *
-                   location_refiner_param_.roi_h2bottom_scale();
+                   location_refiner_param_.roi_h2bottom_scale();//(1080-c_y)*0.5
     bool is_in_rule_roi =
         is_in_roi(bottom_center, static_cast<float>(width_image),
-                  static_cast<float>(height_image), k_mat[5], h_down);
+                  static_cast<float>(height_image), k_mat[5], h_down); //box是否位于图像底部感兴趣区域内
     float dist2camera = common::ISqrt(common::ISqr(object_center[0]) +
-                                      common::ISqr(object_center[2]));
+                                      common::ISqr(object_center[2])); //相机到障碍物中心的距离
 
-    if (dist2camera > location_refiner_param_.min_dist_to_camera() ||
+    if (dist2camera > location_refiner_param_.min_dist_to_camera() || //30
         !is_in_rule_roi) {
       ADEBUG << "Pass for obstacle postprocessor.";
       continue;
@@ -106,10 +106,10 @@ bool LocationRefinerObstaclePostprocessor::Process(
 
     float dimension_hwl[3] = {obj->size(2), obj->size(1), obj->size(0)};
     float box_cent_x = (bbox2d[0] + bbox2d[2]) / 2;
-    Eigen::Vector3f image_point_low_center(box_cent_x, bbox2d[3], 1);
+    Eigen::Vector3f image_point_low_center(box_cent_x, bbox2d[3], 1);//2d box底边中心
     Eigen::Vector3f point_in_camera =
         static_cast<Eigen::Matrix<float, 3, 1, 0, 3, 1>>(
-            camera_k_matrix.inverse() * image_point_low_center);
+            camera_k_matrix.inverse() * image_point_low_center);//box底边中心在相机坐标系下的位置
     float theta_ray =
         static_cast<float>(atan2(point_in_camera.x(), point_in_camera.z()));
     float rotation_y =
@@ -127,16 +127,16 @@ bool LocationRefinerObstaclePostprocessor::Process(
     memcpy(obj_postprocessor_options.bbox, bbox2d, sizeof(float) * 4);
     obj_postprocessor_options.check_lowerbound = true;
     camera::LineSegment2D<float> line_seg(bbox2d[0], bbox2d[3], bbox2d[2],
-                                          bbox2d[3]);
-    obj_postprocessor_options.line_segs.push_back(line_seg);
+                                          bbox2d[3]);//x_start,y_start,x_end,y_end
+    obj_postprocessor_options.line_segs.push_back(line_seg);//将该帧每个障碍物的line_seg加入
     memcpy(obj_postprocessor_options.hwl, dimension_hwl, sizeof(float) * 3);
-    obj_postprocessor_options.ry = rotation_y;
+    obj_postprocessor_options.ry = rotation_y; //由box底边中心反投影计算得到的
     // refine with calibration service, support ground plane model currently
     // {0.0f, cos(tilt), -sin(tilt), -camera_ground_height}
-    memcpy(obj_postprocessor_options.plane, query_plane, sizeof(float) * 4);
+    memcpy(obj_postprocessor_options.plane, query_plane, sizeof(float) * 4);//通过标定获取平面的坐标(a,b,c,d)
 
     // changed to touching-ground center
-    object_center[1] += dimension_hwl[0] / 2;
+    object_center[1] += dimension_hwl[0] / 2; //此时相当于中心点接触地面
     postprocessor_->PostProcessObjWithGround(
         obj_postprocessor_options, object_center, dimension_hwl, &rotation_y);
     object_center[1] -= dimension_hwl[0] / 2;
