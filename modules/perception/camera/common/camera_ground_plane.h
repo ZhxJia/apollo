@@ -100,7 +100,7 @@ struct CameraGroundPlaneParams {
 class CameraGroundPlaneDetector {
  public:
   CameraGroundPlaneDetector() {
-    ground_plane_tracker_ = new GroundPlaneTracker(params_.nr_frames_track);
+    ground_plane_tracker_ = new GroundPlaneTracker(params_.nr_frames_track); //3
   }
   ~CameraGroundPlaneDetector() {
     delete ground_plane_tracker_;
@@ -113,7 +113,7 @@ class CameraGroundPlaneDetector {
     memcpy(k_mat_, k_mat.data(), sizeof(float) * 9);
     width_ = width;
     height_ = height;
-    baseline_ = baseline;// 1/f
+    baseline_ = baseline;// 1/f_x
     ss_flt_.resize(max_nr_samples * 2);
     ss_int_.resize(max_nr_samples * 2);
   }

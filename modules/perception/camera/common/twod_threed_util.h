@@ -255,19 +255,19 @@ void UpdateOffsetZ(T x_start, T z_start, T x_end, T z_end,
   if (x_start > x_end) {
     std::swap(x_start, x_end);
     std::swap(z_start, z_end);
-  }
+  }//保证x值小的为起始点
 
-  T x_check_l = std::max(x_start, range.first);
-  T x_check_r = std::min(x_end, range.second);
+  T x_check_l = std::max(x_start, range.first);//range.first=0
+  T x_check_r = std::min(x_end, range.second);//range.second=相机坐标系下这两个投影点的距离 限定角点坐标的x坐标在(0,dist(box在平面上的投影点))
   T overlap_x = x_check_r - x_check_l;
   if (overlap_x < 1e-6) {
     return;
   }
 
   T dz_divide_dx = (z_end - z_start) * common::IRec(x_end - x_start);
-  T z_check_l = z_start + (x_check_l - x_start) * dz_divide_dx;
-  T z_check_r = z_start + (x_check_r - x_start) * dz_divide_dx;
-  T z_nearest = std::min(z_check_l, z_check_r);
+  T z_check_l = z_start + (x_check_l - x_start) * dz_divide_dx;//x_start大于0 则z_check_l为z_start,否则为z_start-x_start*dz_divide_dx
+  T z_check_r = z_start + (x_check_r - x_start) * dz_divide_dx; //根据增量的相似三角形确定(z_check_r-z_start)/(x_check-x_start)=(z_end-z_start)/(x_end-x_start)
+  T z_nearest = std::min(z_check_l, z_check_r);                 //由于限制而对应同比例缩小delta,没被限制则z_check_l=z_start,z_check_r=z_end
   if (z_nearest < *z_offset) {
     *z_offset = z_nearest;
   }
@@ -293,7 +293,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   bool is_front_l = common::IBackprojectPlaneIntersectionCanonical(
       ls.pt_start, k_mat, plane, pt_of_line_seg_l);//pt_start -> pt_of_line_seg_l
   bool is_front_r = common::IBackprojectPlaneIntersectionCanonical(
-      ls.pt_end, k_mat, plane, pt_of_line_seg_r);//将pt_start,pt_end根据平面约束进行反投影 
+      ls.pt_end, k_mat, plane, pt_of_line_seg_r);//将pt_start,pt_end根据平面约束进行反投影  bbox二维点投影到地平面上
   if (!is_front_l || !is_front_r) {
     return;
   }
@@ -309,7 +309,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   T v[3] = {pt_of_line_seg_r[0] - pt_of_line_seg_l[0],
             pt_of_line_seg_r[1] - pt_of_line_seg_l[1],
             pt_of_line_seg_r[2] - pt_of_line_seg_l[2]};
-  T ry = static_cast<T>(-atan2(v[2], v[0]));
+  T ry = static_cast<T>(-atan2(v[2], v[0])); //???
   GenRotMatrix(ry, rot);
   common::ITranspose3x3(rot);//转置
   common::IScale3(pos, (T)-1); //传入 -1
@@ -318,17 +318,17 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
 
   T l[3] = {0};
   T pt1[3] = {0};
-  T pt2[3] = {ratio_x_over_z, (T)0, (T)1};
+  T pt2[3] = {ratio_x_over_z, (T)0, (T)1};//相机归一化成像平面上物体的中心
   T pt1_local[3] = {0};
   T pt2_local[3] = {0};
 
   // transform to local birdview coordinates 鸟瞰坐标
   std::pair<T, T> range;
   range.first = 0;
-  range.second = common::ISqrt(common::ISqr(v[0]) + common::ISqr(v[2]));
+  range.second = common::ISqrt(common::ISqr(v[0]) + common::ISqr(v[2]));//两个投影点的距离，range貌似指定了坐标的范围
   T pts_local[12] = {0};
   common::IProjectThroughExtrinsic(rot, t, pts_c, pts_local);           //pts_c为相机坐标系下3dbox底面各角点的坐标
-  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);   //转为车辆坐标系pts_local
+  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);   //转为车辆坐标系pts_local(此时的坐标中心为pos->pt_of_line_seg_l)
   common::IProjectThroughExtrinsic(rot, t, pts_c + 6, pts_local + 6);
   common::IProjectThroughExtrinsic(rot, t, pts_c + 9, pts_local + 9);
 
@@ -336,16 +336,16 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   common::IProjectThroughExtrinsic(rot, t, pt2, pt2_local); //
   T x[2] = {pt1_local[0], pt1_local[2]};
   T xp[2] = {pt2_local[0], pt2_local[2]};
-  common::ILineFit2d(x, xp, l);//通过两点x ,xp (x为相机中心在车辆坐标系下的位置，xp为车辆坐标系下车辆中心)得到直线l=ax+by+c
+  common::ILineFit2d(x, xp, l);//通过两点x ,xp (x为相机中心在该坐标系下的位置，xp在该坐标系下车辆中心)得到直线l=ax+by+c
 
-  T zs[4] = {pts_local[2], pts_local[5], pts_local[8], pts_local[11]}; //zs 为3dbox各底面角点在车辆坐标系下的z坐标
+  T zs[4] = {pts_local[2], pts_local[5], pts_local[8], pts_local[11]}; //zs 为3dbox各底面角点在局部坐标系(坐标中心为pos->pt_of_line_seg_l)下的z坐标
   T z_offset = static_cast<T>(0);
   bool all_positive = zs[0] > 0.0f && zs[1] > 0.f && zs[2] > 0.f && zs[3] > 0.f;
   if (all_positive) {
-    z_offset = std::min(zs[0], std::min(zs[1], std::min(zs[2], zs[3]))); //z补偿取最小
+    z_offset = std::min(zs[0], std::min(zs[1], std::min(zs[2], zs[3]))); //若z都大于0 z补偿取最小
   } else {
     z_offset = std::max(zs[0], std::max(zs[1], std::max(zs[2], zs[3])));
-    T xs[4] = {pts_local[0], pts_local[3], pts_local[6], pts_local[9]};
+    T xs[4] = {pts_local[0], pts_local[3], pts_local[6], pts_local[9]}; //在新坐标系下的四个地面角点的x分量
     // 1 -> 2
     UpdateOffsetZ(xs[0], zs[0], xs[1], zs[1], range, &z_offset);
     // 2 -> 3
@@ -354,7 +354,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
     UpdateOffsetZ(xs[2], zs[2], xs[3], zs[3], range, &z_offset);
     // 4 -> 1
     UpdateOffsetZ(xs[3], zs[3], xs[0], zs[0], range, &z_offset);
-  }
+  } //上面相互比较找到了里局部坐标系中心点最近的角点的z坐标
   if (z_offset < Z_RESOLUTION && z_offset > -Z_RESOLUTION) {
     return;
   }
@@ -371,20 +371,20 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
 
   T dz_local = -z_offset;
   T dx_local =
-      -l[1] * dz_local * common::IRec(l[0]); /*enforce to be along the ray*/
+      -l[1] * dz_local * common::IRec(l[0]); /*enforce to be along the ray*/ //与该直线平行 中心点偏移的方向必须与该直线平行以此来确定沿x的偏移大小 沿z的偏移大小z_offset为最近的角点在局部坐标系中心点的z坐标大小
 
   T center_local[3] = {0};
-  common::IProjectThroughExtrinsic(rot, t, center_c, center_local);
+  common::IProjectThroughExtrinsic(rot, t, center_c, center_local);//将center_c(相机坐标系)转换为该局部坐标系
   center_local[0] += dx_local;
   center_local[1] = 0;
-  center_local[2] += dz_local;
+  center_local[2] += dz_local;//center_local是进行补偿之后的局部坐标系的中心值
   T center_local_to_c[3] = {0};
   common::ISub3(t, center_local);//center_local-=t
-  common::IMultAtx3x3(rot, center_local, center_local_to_c);
+  common::IMultAtx3x3(rot, center_local, center_local_to_c);//这里旋转矩阵为啥不是逆
   dx_dz[0] = center_local_to_c[0] - center_c[0];
   dx_dz[1] = center_local_to_c[2] - center_c[2];
 
-  T dz_max = z_avg * Z_UNSTABLE_RATIO;
+  T dz_max = z_avg * Z_UNSTABLE_RATIO;//限制更新最大阈值(0.3*center_c[2])
   if (z_offset > static_cast<T>(0.0f) && std::abs(dx_dz[1]) > dz_max) {
     dx_dz[0] = dx_dz[1] = 0;
   }

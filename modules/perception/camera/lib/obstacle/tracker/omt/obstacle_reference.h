@@ -38,7 +38,7 @@ struct Reference {
 
 class ObstacleReference {
  public:
-  void Init(const omt::ReferenceParam &ref_param, float width, float height);
+  void Init(const omt::ReferenceParam &ref_param, float width, float height); //OMTObstacleTracker::Init 中调用
   void UpdateReference(const CameraFrame *frame,
                        const std::vector<Target> &targets);
   void CorrectSize(CameraFrame *frame);

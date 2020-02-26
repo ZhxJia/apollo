@@ -42,7 +42,7 @@ void ObstacleReference::Init(const omt::ReferenceParam &ref_param, float width,
     init_ref_map_[y].resize(ref_width_, -1);
     if (y < ref_height_ / 2 || y > ref_height_ - ref_param_.margin()) { //margin:2
       continue;
-    }
+    }//相当于对图像的下半部分处理
     for (int x = ref_param.margin(); x < ref_width_ - ref_param.margin(); ++x) {
       if (y > -k * static_cast<float>(x) + b && y > k * static_cast<float>(x)) {
         init_ref_map_[y][x] = 0;
@@ -58,7 +58,7 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
   SyncGroundEstimator(sensor, frame->camera_k_matrix,
                       static_cast<int>(img_width_),
                       static_cast<int>(img_height_));
-  auto &ground_estimator = ground_estimator_mapper_[sensor];
+  auto &ground_estimator = ground_estimator_mapper_[sensor]; //得到对应传感器的reference
 
   auto &refs = reference_[sensor];
   auto &ref_map = ref_map_[sensor];
@@ -75,10 +75,10 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
     if (target.isLost()) {
       continue;
     }
-    auto obj = target[-1]->object;
+    auto obj = target[-1]->object; //最新的检测物
     if (!Contain(object_template_manager_->TypeCanBeRef(), obj->sub_type)) {
       continue;
-    }//判断此obj是否是可以用于参考的类型CAN VAN
+    }//判断此obj是否是可以用于参考的类型CAR VAN
     auto &box = obj->camera_supplement.box;
 
     if (box.ymax - box.ymin < ref_param_.min_allow_height()) { //50
@@ -86,7 +86,7 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
     }
     if (box.ymax < frame->camera_k_matrix(1, 2) + 1) {
       continue; // y_max < c_y
-    }
+    }//box的底边应该尽可能位于图像底部
     CHECK(box.ymax < img_height_ + 1) << box.ymax;
     CHECK(box.xmax < img_width_ + 1) << box.xmax;
     float x = box.Center().x;
@@ -102,9 +102,9 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
       Reference r;
       r.area = box.Area();
       r.ymax = y;
-      r.k = obj->size[2] / (y - box.ymin);
-      refs.push_back(r); //jac:对应每个target的
-      ref_map[y_discrete][x_discrete] = static_cast<int>(refs.size());
+      r.k = obj->size[2] / (y - box.ymin); // H/h
+      refs.push_back(r); //将满足要求的target的Reference相关信息存储到列表中
+      ref_map[y_discrete][x_discrete] = static_cast<int>(refs.size()); //将refs中的对应索引存储到box中心点对应的ref_map位置中
     } else if (ref_map[y_discrete][x_discrete] > 0) {
       int index = ref_map[y_discrete][x_discrete] - 1;
       if (box.Area() > refs[index].area) {
@@ -116,20 +116,20 @@ void ObstacleReference::UpdateReference(const CameraFrame *frame,
   }
 
   // detect the ground from reference
-  std::vector<float> vd_samples(static_cast<int>(refs.size() * 2), 0);
+  std::vector<float> vd_samples(static_cast<int>(refs.size() * 2), 0);//存储reference的底边y位置以及深度
   int count_vd = 0;
   for (auto &&reference : refs) {
-    float z_ref = reference.k * frame->camera_k_matrix(1, 1);
+    float z_ref = reference.k * frame->camera_k_matrix(1, 1); //k为实际物体高度与box高度的比值 z=H/h*f
     vd_samples[count_vd++] = reference.ymax;
     vd_samples[count_vd++] = common::IRec(z_ref);
   }
 
   int count_samples = static_cast<int>(vd_samples.size() / 2);
-  if (count_samples > ground_estimator.get_min_nr_samples()) {
+  if (count_samples > ground_estimator.get_min_nr_samples()) { //6 reference>6 可以进行ground检测
     ground_estimator.DetetGround(
         frame->calibration_service->QueryPitchAngle(),
         frame->calibration_service->QueryCameraToGroundHeight(),
-        vd_samples.data(), count_samples);
+        vd_samples.data(), count_samples);//vd_samples.data()表示指向vd_samples中数组第一个元素的指针
   }
 }
 void ObstacleReference::CorrectSize(CameraFrame *frame) {

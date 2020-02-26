@@ -163,7 +163,7 @@ void Target::Update3D(CameraFrame *frame) {
   if (!isLost()) {
     Eigen::Vector2d z;
     z << std::sin(object->theta * 2), std::cos(object->theta * 2);
-    direction.AddMeasure(z);
+    direction.AddMeasure(z);//一阶低通滤波
     z = direction.get_state();
     float theta = static_cast<float>(std::atan2(z[0], z[1]) / 2.0);
     AINFO << "dir " << id << " " << object->theta << " " << theta;
@@ -181,7 +181,7 @@ void Target::Update3D(CameraFrame *frame) {
       float obj_2_car_z = object->camera_supplement.local_center[2];
       float obj_distance_to_main_car =
           obj_2_car_x * obj_2_car_x + obj_2_car_z * obj_2_car_z;
-      float dis_err = target_param_.world_center().measure_variance() *
+      float dis_err = target_param_.world_center().measure_variance() * //variance = 1.0
                       obj_distance_to_main_car;
       world_center.measure_noise_.setIdentity();
       world_center.measure_noise_ *= dis_err;
@@ -197,7 +197,7 @@ void Target::Update3D(CameraFrame *frame) {
       world_center_const.Correct(z);
     }
   }
-
+  //根据上述的滤波方法的状态结果，向object的属性中赋值
   if (object->type == base::ObjectType::UNKNOWN_UNMOVABLE) {
     const Eigen::VectorXd &x = world_center_for_unmovable.get_state();
     const Eigen::MatrixXd &var = world_center_for_unmovable.get_variance();
@@ -212,20 +212,20 @@ void Target::Update3D(CameraFrame *frame) {
     Eigen::Vector4d x = world_center.get_state();
     // TODO(gaohan02): refactor
     if (tracked_objects.size() > 10) {
-      auto pose1 = get_object(-2)->object->center;
-      auto pose2 = get_object(-10)->object->center;
+      auto pose1 = get_object(-2)->object->center; //倒数第2个的中心位置
+      auto pose2 = get_object(-10)->object->center; //倒数第10个的中心位置
       double ts1 = get_object(-2)->timestamp;
       double ts2 = get_object(-10)->timestamp;
-      Eigen::Vector3d vel = (pose1 - pose2) / (ts1 - ts2);
-      double speed1 = std::sqrt(vel(0) * vel(0) + vel(1) * vel(1));
-      double speed2 = std::sqrt(x(2) * x(2) + x(3) * x(3));
+      Eigen::Vector3d vel = (pose1 - pose2) / (ts1 - ts2); 
+      double speed1 = std::sqrt(vel(0) * vel(0) + vel(1) * vel(1));////8帧平均速度
+      double speed2 = std::sqrt(x(2) * x(2) + x(3) * x(3));//当前最新检测的速度
       double ratio = (Equal(speed1, 0)) ? 0 : speed2 / speed1;
       ADEBUG << "Target: " << id << " " << vel.transpose() << " , "
              << x.block<2, 1>(2, 0).transpose();
-      if (ratio > target_param_.too_large_velocity_ratio()) {
+      if (ratio > target_param_.too_large_velocity_ratio()) { //1.5
         world_center.MagicVelocity(vel);
         ADEBUG << "Velocity too large";
-      } else if (ratio > target_param_.large_velocity_ratio()) {
+      } else if (ratio > target_param_.large_velocity_ratio()) { //2.5
         vel(0) = (x(2) + vel(0)) / 2;
         vel(1) = (x(3) + vel(1)) / 2;
         world_center.MagicVelocity(vel);
@@ -235,7 +235,7 @@ void Target::Update3D(CameraFrame *frame) {
       }
     }
 
-    x = world_center.get_state();
+    x = world_center.get_state();//(x,y,vx,vy)
     double speed = std::sqrt(x(2) * x(2) + x(3) * x(3));
     const std::map<base::ObjectSubType, float> &kTypeSpeedLimit =
         object_template_manager_->TypeSpeedLimit();
@@ -258,8 +258,8 @@ void Target::Update3D(CameraFrame *frame) {
     object->velocity(2) = 0;
     world_velocity.AddMeasure(object->velocity.cast<double>());
     object->velocity_uncertainty = world_velocity.get_variance().cast<float>();
-    if (speed > target_param_.velocity_threshold()) {
-      object->direction(0) = static_cast<float>(x(2) / speed);
+    if (speed > target_param_.velocity_threshold()) { //2
+      object->direction(0) = static_cast<float>(x(2) / speed); //速度方向向量的单位化
       object->direction(1) = static_cast<float>(x(3) / speed);
       object->direction(2) = 0;
       object->theta = static_cast<float>(std::atan2(x(3), x(2)));
@@ -271,7 +271,7 @@ void Target::Update3D(CameraFrame *frame) {
     // check displacement orientation
     bool stable_moving = false;
     double avg_vel_norm = world_velocity.get_state().norm();
-    if (avg_vel_norm > target_param_.stable_moving_speed()) {
+    if (avg_vel_norm > target_param_.stable_moving_speed()) { //2.0
       stable_moving = true;
     } else if (tracked_objects.size() > 1) {
       auto prev_pos = get_object(-2)->object->center;
@@ -282,11 +282,11 @@ void Target::Update3D(CameraFrame *frame) {
       // if an object is moving, its displacement orientation should be
       // consistent
       stable_moving = displacement_theta.get_variance()(0, 0) <
-                      target_param_.displacement_theta_var();
+                      target_param_.displacement_theta_var(); //0.25
     }
 
     // check const position kalman residuals
-    const auto &residual = world_center_const.residual_;
+    const auto &residual = world_center_const.residual_; //参差，测量-预测
     if (!stable_moving &&
         residual(0) * residual(0) <
             4 * world_center_const.measure_noise_(0, 0) &&
@@ -367,7 +367,7 @@ void Target::ClappingTrackVelocity(const base::ObjectPtr &obj) {
         target_param_.abnormal_velocity_heading_angle_threshold()) {
       ADEBUG << "omt set zero velocity because vel_heading_angle_change >"
                 " abnormal_velocity_heading_angle_threshold : "
-             << target_param_.abnormal_velocity_heading_angle_threshold();
+             << target_param_.abnormal_velocity_heading_angle_threshold();//0.7845
       obj->velocity = Eigen::Vector3f::Zero();
       return;
     }

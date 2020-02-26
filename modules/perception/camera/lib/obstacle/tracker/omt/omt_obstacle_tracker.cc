@@ -444,33 +444,33 @@ bool OMTObstacleTracker::Associate3D(const ObstacleTrackerOptions &options,
     auto obj = target[-1]->object;
     if (obj->type != base::ObjectType::UNKNOWN_UNMOVABLE) {
       Eigen::VectorXd x = target.world_center.get_state();
-      double move = sqr(x[0] - obj->center[0]) + sqr(x[1] - obj->center[1]);
+      double move = sqr(x[0] - obj->center[0]) + sqr(x[1] - obj->center[1]);//target最新的object世界坐标系下中心的x,y的移动
       float obj_2_car_x = obj->camera_supplement.local_center[0];
       float obj_2_car_y = obj->camera_supplement.local_center[2];
       float dis = obj_2_car_x * obj_2_car_x + obj_2_car_y * obj_2_car_y;
-      if (move > sqr(omt_param_.abnormal_movement()) * dis) {
+      if (move > sqr(omt_param_.abnormal_movement()) * dis) {             //0.3*dis
         AINFO << "Target " << target.id << " is removed for abnormal movement";
-        track_objects.push_back(target.latest_object);
-        target.Clear();
+        track_objects.push_back(target.latest_object);//将移除的target的最新检测目标暂存
+        target.Clear(); //异常移动 移除之前得到tracked_objects
       }
     }
   }
-  ClearTargets();
+  ClearTargets();//将上面异常移动的target清除
   used_.clear();
   used_.resize(track_objects.size(), false);
-  int new_count = CreateNewTarget(track_objects);
+  int new_count = CreateNewTarget(track_objects);//将满足条件的track_objects创建新的target
   AINFO << "Create " << new_count << " new target";
   for (int j = 0; j < new_count; ++j) {
     targets_[targets_.size() - j - 1].Update2D(frame);
     targets_[targets_.size() - j - 1].UpdateType(frame);
-  }
+  }//对这些新创建的target通过滤波器更新2D状态和类型
   for (Target &target : targets_) {
     target.Update3D(frame);
     if (!target.isLost()) {
       frame->tracked_objects.push_back(target[-1]->object);
       ADEBUG << "Target " << target.id
              << " velocity: " << target.world_center.get_state().transpose()
-             << " % " << target.world_center.variance_.diagonal().transpose()
+             << " % " << target.world_center.variance_.diagonal().transpose() //diagonal生成对角矩阵
              << " % " << target[-1]->object->velocity.transpose();
     }
   }

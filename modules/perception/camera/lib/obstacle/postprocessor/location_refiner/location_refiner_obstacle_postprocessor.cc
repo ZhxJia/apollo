@@ -142,7 +142,7 @@ bool LocationRefinerObstaclePostprocessor::Process(
     object_center[1] -= dimension_hwl[0] / 2;
 
     float z_diff_camera =
-        object_center[2] - obj->camera_supplement.local_center(2);
+        object_center[2] - obj->camera_supplement.local_center(2); //后处理之后的值与原值的变化
 
     // fill back results
     obj->camera_supplement.local_center(0) = object_center[0];

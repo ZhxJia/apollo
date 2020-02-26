@@ -57,14 +57,14 @@ bool ConvertGround4ToGround3(const float &baseline,
   CHECK_EQ(ground3->size(), 3);
   // normalization
   float p[4] = {ground4[0], ground4[1], ground4[2], ground4[3]};
-  float norm = common::ISqrt(common::ISquaresum3(p));
-  common::IScale4(p, common::IRec(norm));
-  if (p[0] > 1e-3) {
+  float norm = common::ISqrt(common::ISquaresum3(p));//前三个值的平方和
+  common::IScale4(p, common::IRec(norm));//单位法向量
+  if (p[0] > 1e-3) {//单位法向量存在x分量
     AERROR << "Have roll in the ground plane: " << p[0];
     ground3->assign(3, 0.f);
     return false;
   }
-  // no roll
+  // no roll 即p[0]=0
   const float &b = baseline;
   const float &fx = k_mat[0];
   const float &fy = k_mat[4];
@@ -281,14 +281,14 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
   CHECK(vd != nullptr);
   CHECK(inlier_ratio != nullptr);
   *inlier_ratio = 0.0f;
-  if (count_vd < params_.min_nr_samples) {
+  if (count_vd < params_.min_nr_samples) { //6
     l_[0] = l_[1] = l_[2] = 0.0f;
     return false;
   }
 
-  double kMinInlierRatio = params_.min_inlier_ratio;
-  float kThresInlier = params_.thres_inlier_plane_fitting;
-  /*standard RANSAC solution*/
+  double kMinInlierRatio = params_.min_inlier_ratio; //0.5
+  float kThresInlier = params_.thres_inlier_plane_fitting; //0.0035
+  /*standard RANSAC solution*/ //随机一致性采样
   float *vs = ss_flt_.data();
   float *ds = vs + count_vd;
   for (int i = 0; i < count_vd; ++i) {

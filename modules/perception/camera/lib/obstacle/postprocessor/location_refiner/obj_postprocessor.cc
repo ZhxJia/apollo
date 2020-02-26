@@ -145,8 +145,8 @@ bool ObjPostProcessor::PostRefineCenterWithGroundBoundary(
     float dxdz[2] = {0};
     GetDxDzForCenterFromGroundLineSeg(line_seg_limits[i], plane, pts_c, k_mat_,
                                       width_, height_, ratio_x_over_z, dxdz,
-                                      check_lowerbound); 
-    dxdz_acc[0] += dxdz[0];
+                                      check_lowerbound); //获取x,z坐标的变化值
+    dxdz_acc[0] += dxdz[0]; //对每一个边界框的补偿进行叠加
     dxdz_acc[1] += dxdz[1];
   }
   center[0] += dxdz_acc[0];
@@ -179,7 +179,7 @@ int ObjPostProcessor::GetDepthXPair(const float *bbox, const float *hwl,
   float *pt = pts;
   bool save_pts_c = pts_c != nullptr;
   for (int i = 0; i < 4; ++i) {
-    common::IProjectThroughExtrinsic(rot, center, pt, pt_c);//(x_cor[i], 0.0f, z_cor[i])各底面角点投影得到相机坐标系下pt_C
+    common::IProjectThroughExtrinsic(rot, center, pt, pt_c);//车辆坐标系下(x_cor[i], 0.0f, z_cor[i])各底面角点投影得到相机坐标系下pt_C
     common::IProjectThroughIntrinsic(k_mat_, pt_c, pt_proj); //投影到图像平面pt_proj
     depth_pts[i] = pt_c[2];
     x_pts[i] = common::IRound(pt_proj[0] * common::IRec(pt_proj[2]));
