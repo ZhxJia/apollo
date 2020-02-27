@@ -67,9 +67,9 @@ class GroundPlaneTracker {
   }
 
  private:
-  int head_ = 0;
+  int head_ = 0;  //跟踪器存储长度为3
   std::vector<float> pitch_height_inlier_tracks_;  // pitch, height, inlier ...
-  std::vector<float> const_weight_temporal_;
+  std::vector<float> const_weight_temporal_; //在构造函数中进行了初始化 
   std::vector<float> weight_;
 };
 
@@ -100,7 +100,7 @@ struct CameraGroundPlaneParams {
 class CameraGroundPlaneDetector {
  public:
   CameraGroundPlaneDetector() {
-    ground_plane_tracker_ = new GroundPlaneTracker(params_.nr_frames_track); //3
+    ground_plane_tracker_ = new GroundPlaneTracker(params_.nr_frames_track); //初始化 3
   }
   ~CameraGroundPlaneDetector() {
     delete ground_plane_tracker_;
@@ -164,18 +164,18 @@ class CameraGroundPlaneDetector {
 /*
  fitting utils
 */
-template <typename T>
+template <typename T> //a*y+b*disp + c = 0->disp = p0*y+p1
 void GroundHypoGenFunc(const T *v, const T *d, T *p) {
   // disp = p0 * y + p1 -> l = {p0, -1, p1}
   T x[2] = {v[0], d[0]};
   T xp[2] = {v[1], d[1]};
   T l[3] = {0};
-  common::ILineFit2d(x, xp, l);
+  common::ILineFit2d(x, xp, l); //通过非齐次空间的两个二维点确定直线
   p[0] = -l[0] * common::IRec(l[1]);
   p[1] = -l[2] * common::IRec(l[1]);
 }
 
-template <typename T>
+template <typename T> // disp = p0 * y + p1   error_tol为判断阈值，由kThresInlier设置
 void GroundFittingCostFunc(const T *p, const T *v, const T *d, int n,
                            int *nr_inlier,  // NOLINT compatible for i-lib
                            int *inliers,
@@ -189,7 +189,7 @@ void GroundFittingCostFunc(const T *p, const T *v, const T *d, int n,
     T d_proj = refx[0] * p[0] + p[1];
     T proj_err = static_cast<T>(fabs(d_proj - refp[0]));
     if (proj_err < error_tol) {
-      inliers[(*nr_inlier)++] = i;
+      inliers[(*nr_inlier)++] = i; //inliers存储内点的索引
       *cost += proj_err;
     }
     ++refx;

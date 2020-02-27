@@ -51,23 +51,23 @@ bool RobustBinaryFitRansac(T* x, T* xp, int n, T* model, int* consensus_size,
                            double confidence = 0.99, double inlierprob = 0.5,
                            int min_nr_inliers = s,
                            bool random_shuffle_inputs = false) {
-  const int kSize = s;
-  const int kLength = l;
-  const int kLp = lp;
-  const int kKsize = k;
+  const int kSize = s;    //2
+  const int kLength = l;  //1
+  const int kLp = lp;     //1
+  const int kKsize = k;   //2
   int indices[kSize];
-  T samples_x[kLength * kSize];
-  T samples_xp[kLp * kSize];
+  T samples_x[kLength * kSize]; //2
+  T samples_xp[kLp * kSize];    //2
   T tmp_model[kKsize];
-  T cost = std::numeric_limits<T>::max();
+  T cost = std::numeric_limits<T>::max();//返回编译器允许的该T类型的最大值
   T best_cost = std::numeric_limits<T>::max();
 
   if (n < min_nr_inliers) {
     return false;
-  }
+  } //refs的数量小于min
 
   double actual_inlierprob = 0.0, tmp_inlierprob;
-  int nr_trials = IRansacTrials(s, confidence, inlierprob);
+  int nr_trials = IRansacTrials(s, confidence, inlierprob);//inlierpron为任意选择一个点为局内点(有效点) 返回Ransac尝试次数(16)
 
   int nr_inliers = 0;
   int rseed = I_DEFAULT_SEED;
@@ -77,38 +77,38 @@ bool RobustBinaryFitRansac(T* x, T* xp, int n, T* model, int* consensus_size,
   IZero(model, k);      // initialize the model with zeros
 
   if (random_shuffle_inputs) {
-    IRandomizedShuffle(x, xp, n, l, lp, &rseed);
+    IRandomizedShuffle(x, xp, n, l, lp, &rseed);//随机排列 n为样本refs的总数   x->vs xp->ds
   }
 
   while (nr_trials > sample_count) {
     // generate random indices
-    IRandomSample(indices, s, n, &rseed);
+    IRandomSample(indices, s, n, &rseed); //随机采样 s=2 n为refs的数量 rseed =432 从[0,n)中每次采2个数
     // prepare data for model fitting
     for (i = 0; i < s; ++i) {
-      idxl = indices[i] * l;
+      idxl = indices[i] * l; //l=lp=1
       idxlp = indices[i] * lp;
       il = i * l;
       ilp = i * lp;
-      ICopy(x + idxl, samples_x + il, l);
-      ICopy(xp + idxlp, samples_xp + ilp, lp);
-    }
+      ICopy(x + idxl, samples_x + il, l); //复制x对应索引的值到samples_x[0,1]中
+      ICopy(xp + idxlp, samples_xp + ilp, lp);//复制xp的值到samples_xp[0,1]中
+    } //得到两对采样值x[0],xp[0]和x[1],xp[1]
 
     // estimate model
-    HypogenFunc(samples_x, samples_xp, tmp_model);
+    HypogenFunc(samples_x, samples_xp, tmp_model); //samples_x中存储box的y_max,samples_xp中存储该物体的深度倒数1/z
 
-    // validate model
+    // validate model  cost为内点的总误差，inliers存放内点的索引 nr_inliers内点数量
     CostFunc(tmp_model, x, xp, n, &nr_inliers, inliers + n, &cost, error_tol);
     if ((nr_inliers > *consensus_size) ||
         (nr_inliers == *consensus_size && cost < best_cost)) {
-      *consensus_size = nr_inliers;
+      *consensus_size = nr_inliers; //目前匹配的最多的内点数
       best_cost = cost;
-      ICopy(tmp_model, model, k);
-      ICopy(inliers + n, inliers, *consensus_size);  // record inlier indices
-      if (adaptive_trial_count) {
+      ICopy(tmp_model, model, k); //将匹配内点数最多的模型导出
+      ICopy(inliers + n, inliers, *consensus_size);  // record inlier indices 将匹配最多的模型的内点索引记录
+      if (adaptive_trial_count) { //自适应尝试
         tmp_inlierprob = IDiv(static_cast<double>(*consensus_size), n);
         if (tmp_inlierprob > actual_inlierprob) {
           actual_inlierprob = tmp_inlierprob;
-          nr_trials = IRansacTrials(s, confidence, actual_inlierprob);
+          nr_trials = IRansacTrials(s, confidence, actual_inlierprob);//调整任意一个点为内点的概率，以此调整trial次数
         }
       }
     }

@@ -89,9 +89,9 @@ void GetGroundPlanePitchHeight(const float &baseline,
   if (ground4[3] > 0.0f) {
     common::IScale4(ground4.data(), -1.0f);
   }
-  *cam_height = -ground4[3];
-  double cos_pitch = ground4[1];
-  double sin_pitch = -ground4[2];
+  *cam_height = -ground4[3]; //平面到原点的距离D'(单位法向量)
+  double cos_pitch = ground4[1]; //
+  double sin_pitch = -ground4[2]; 
   *pitch = static_cast<float>(atan2(sin_pitch, cos_pitch));
 }
 
@@ -118,15 +118,15 @@ GroundPlaneTracker::GroundPlaneTracker(int track_length) {
   weight_.resize(track_length, 0.0f);
   for (int i = track_length - 1; i >= 0; --i) {
     const_weight_temporal_.at(i) =
-        common::IPow(common::ISqrt(2.0f), track_length - 1 - i);
+        common::IPow(common::ISqrt(2.0f), track_length - 1 - i);//根2的0,1,2次方(1,1,414,2) 对应于跟踪列表的权重,索引0为2 依次递减。
   }
 
   // normalize
-  float accm_sum = common::ISum(const_weight_temporal_.data(), track_length);
+  float accm_sum = common::ISum(const_weight_temporal_.data(), track_length); //
   common::IScale(const_weight_temporal_.data(), track_length,
-                 common::IRec(accm_sum));
+                 common::IRec(accm_sum));//各值除和，归一化
 
-  head_ = track_length;
+  head_ = track_length; //注意到tracker的存储是从后往前添加(低索引存储新值)
 }
 
 void GroundPlaneTracker::Push(const std::vector<float> &ph,
@@ -137,7 +137,7 @@ void GroundPlaneTracker::Push(const std::vector<float> &ph,
   if (head_ == 0) {
     if (length > 3) {                      // move backwards
       for (i = length - 1; i >= 3; i--) {  // 3: pitch, height, inlier-number
-        pitch_height_inlier_tracks_[i] = pitch_height_inlier_tracks_[i - 3];
+        pitch_height_inlier_tracks_[i] = pitch_height_inlier_tracks_[i - 3]; //head_=0 将数据后移，这样空出了0,1,2前三个位置
       }
     }
   } else {  // _head >= zero
@@ -145,7 +145,7 @@ void GroundPlaneTracker::Push(const std::vector<float> &ph,
   }
 
   // fill the head_ (fresh input)
-  int head3 = head_ * 3;
+  int head3 = head_ * 3; //在head_代表的数据元组(pitch,height,inlier_ratio)起始位置插入新值
   pitch_height_inlier_tracks_[head3] = ph[0];
   pitch_height_inlier_tracks_[head3 + 1] = ph[1];
   pitch_height_inlier_tracks_[head3 + 2] = inlier_ratio;
@@ -155,7 +155,7 @@ void GroundPlaneTracker::GetGround(float *pitch, float *cam_height) {
   CHECK_NOTNULL(pitch);
   CHECK_NOTNULL(cam_height);
   int i = 0;
-  int length = static_cast<int>(pitch_height_inlier_tracks_.size() / 3);
+  int length = static_cast<int>(pitch_height_inlier_tracks_.size() / 3);//跟踪器中检测到的历史 平面信息(pitch,height,inlier_ration)
   if (!length) {
     *pitch = *cam_height = 0.0f;
     return;
@@ -168,12 +168,12 @@ void GroundPlaneTracker::GetGround(float *pitch, float *cam_height) {
   float ph[2] = {0};
   float w = 0.0f;
   for (i = head_; i < length; i++) {
-    w = pitch_height_inlier_tracks_.at(i * 3 + 2);
-    weight_.at(i) = const_weight_temporal_.at(i) * w;
+    w = pitch_height_inlier_tracks_.at(i * 3 + 2); //内点率
+    weight_.at(i) = const_weight_temporal_.at(i) * w; //注意const_weight_temporal为tracker中存储3次信息的权重，刚得到的信息权重最大。
   }
 
   // normalize factor
-  float accm_wei = common::ISum(weight_.data() + head_, (length - head_));
+  float accm_wei = common::ISum(weight_.data() + head_, (length - head_));//head_ 往后的权重值求和
 
   ph[0] = ph[1] = 0.0f;
   for (i = head_; i < length; i++) {
@@ -181,7 +181,7 @@ void GroundPlaneTracker::GetGround(float *pitch, float *cam_height) {
     int i3 = i * 3;
     ph[0] += pitch_height_inlier_tracks_.at(i3) * w;
     ph[1] += pitch_height_inlier_tracks_.at(i3 + 1) * w;
-  }
+  } //对tracker中的三次存储信息加权
   ph[0] = common::IDiv(ph[0], accm_wei);
   ph[1] = common::IDiv(ph[1], accm_wei);
   *pitch = ph[0];
@@ -237,16 +237,16 @@ bool CameraGroundPlaneDetector::DetetGround(float pitch, float camera_height,
     if (CameraGroundPlaneDetector::DetectGroundFromSamples(vd, count_vd,
                                                            &inlier_ratio)) {
       ADEBUG << "l: " << l_[0] << ", " << l_[1] << ", " << l_[2];
-      ground3.assign(l_, l_ + 3);
-      GetGroundPlanePitchHeight(baseline_, k_mat, ground3, &ph[0], &ph[1]);
+      ground3.assign(l_, l_ + 3);//通过数组l_的(start,last)初始化
+      GetGroundPlanePitchHeight(baseline_, k_mat, ground3, &ph[0], &ph[1]); //将ground3->ground4 ,获取pitch和height
       ADEBUG << "ph: " << ph[0] << ", " << ph[1];
-      success = fabs(ph[0]) < params_.max_tilt_angle &&
-                ph[1] < params_.max_camera_ground_height;
+      success = fabs(ph[0]) < params_.max_tilt_angle && //最大10度
+                ph[1] < params_.max_camera_ground_height; //最高2.5m
       if (success) {
-        ground_plane_tracker_->Push(ph, inlier_ratio);
-        ground_plane_tracker_->GetGround(&ph[0], &ph[1]);
-        GetGround3FromPitchHeight(k_mat, baseline_, ph[0], ph[1], &ground3);
-        FillGroundModel(ground3);
+        ground_plane_tracker_->Push(ph, inlier_ratio); //将pitch,height,inlier_ration(内点率)加入到跟踪器中
+        ground_plane_tracker_->GetGround(&ph[0], &ph[1]); //对tracker中存储的(ph,inlier_ratio)按照时间先后顺序 加权得到新的ph
+        GetGround3FromPitchHeight(k_mat, baseline_, ph[0], ph[1], &ground3);//根据pitch,height得到ground4，在转换为ground3
+        FillGroundModel(ground3);//ground3 -> l_
         ADEBUG << "l tracked: " << l_[0] << ", " << l_[1] << ", " << l_[2];
         ADEBUG << "ph tracked: " << ph[0] << ", " << ph[1];
       }
@@ -258,12 +258,12 @@ bool CameraGroundPlaneDetector::DetetGround(float pitch, float camera_height,
       return true;
     }
 
-    // backup using last successful frame or given pitch & height
-    if (ground_plane_tracker_->GetCurTrackLength() > 0) {
+    // backup using last successful frame or given pitch & height 当前检测的值不成功 success =false
+    if (ground_plane_tracker_->GetCurTrackLength() > 0) { //跟踪列表有存储值，使用上一帧成功检测的值恢复
       ground_plane_tracker_->GetGround(&ph[0], &ph[1]);
       GetGround3FromPitchHeight(k_mat, baseline_, ph[0], ph[1], &ground3);
       FillGroundModel(ground3);
-    } else {
+    } else { //当前跟踪列表中没有得到的平面信息，直接使用给定的pitch和height
       CHECK(fabs(pitch) < params_.max_tilt_angle);
       CHECK(camera_height < params_.max_camera_ground_height);
       CHECK_GT(camera_height, 0.f);
@@ -281,7 +281,7 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
   CHECK(vd != nullptr);
   CHECK(inlier_ratio != nullptr);
   *inlier_ratio = 0.0f;
-  if (count_vd < params_.min_nr_samples) { //6
+  if (count_vd < params_.min_nr_samples) { //6 count_vd中refs中referenece的数量
     l_[0] = l_[1] = l_[2] = 0.0f;
     return false;
   }
@@ -292,13 +292,13 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
   float *vs = ss_flt_.data();
   float *ds = vs + count_vd;
   for (int i = 0; i < count_vd; ++i) {
-    int i2 = i << 1;
+    int i2 = i << 1; //i2 =0 2 4 6
     vs[i] = vd[i2];
     ds[i] = vd[i2 + 1];
-  }
+  } //vs中保存了box底边的位置y，ds中保存了深度z
   int nr_inliers = 0;
   int *inliers = ss_int_.data();
-  memset(inliers, 0, sizeof(int) * count_vd * 2);
+  memset(inliers, 0, sizeof(int) * count_vd * 2);//将inliners 2*count_vd的空间置0
   float p[2] = {0};
 
   if (!common::RobustBinaryFitRansac<float, 1, 1, 2, 2,
@@ -311,7 +311,7 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
   } else {
     *inlier_ratio = static_cast<float>(nr_inliers) *
                     common::IRec(static_cast<float>(count_vd));
-  }
+  }//内点率 nr_inliers(最优模型的内点数)/所有的样本数
 
   if (*inlier_ratio < kMinInlierRatio) {
     *inlier_ratio = 0.0f;
@@ -322,14 +322,14 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
   // re-fit using inliers
   int count = 0;
   for (int i = 0; i < nr_inliers; ++i) {
-    int i2 = inliers[i] << 1;
-    int count2 = count << 1;
+    int i2 = inliers[i] << 1; //内点的索引 * 2 为在inliers中的索引位置
+    int count2 = count << 1; //0 2 4 ..
     std::swap(vd[i2], vd[count2]);
     std::swap(vd[i2 + 1], vd[count2 + 1]);
-    ++count;
-  }
+    ++count; 
+  }//将模型的内点提前 
   float l_best[3] = {0};
-  common::ILineFit2dTotalLeastSquare(vd, l_best, count);
+  common::ILineFit2dTotalLeastSquare(vd, l_best, count); //再根据这些内点进行最小二乘
   memcpy(l_, l_best, sizeof(float) * 3);
   return true;
 }
