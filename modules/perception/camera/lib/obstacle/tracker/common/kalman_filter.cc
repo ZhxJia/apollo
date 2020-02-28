@@ -68,7 +68,7 @@ void KalmanFilterConstVelocity::Correct(const Eigen::VectorXd &z) {
     state_ = state_ + kalman_gain_ * (measure - measure_matrix_ * state_);
 
     // compute likelihood
-    auto residual = measure - predict_state_.head(2);
+    auto residual = measure - predict_state_.head(2);//获取predict_state_的前两个元素 这和乘测量矩阵相似的效果
     likelihood_ =
         std::exp(-0.5 * residual.transpose() * cov.inverse() * residual) /
         std::sqrt(2 * M_PI * cov.determinant());

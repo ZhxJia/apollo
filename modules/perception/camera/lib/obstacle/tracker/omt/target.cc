@@ -286,7 +286,7 @@ void Target::Update3D(CameraFrame *frame) {
     }
 
     // check const position kalman residuals
-    const auto &residual = world_center_const.residual_; //参差，测量-预测
+    const auto &residual = world_center_const.residual_; //残差，测量-预测
     if (!stable_moving &&
         residual(0) * residual(0) <
             4 * world_center_const.measure_noise_(0, 0) &&
