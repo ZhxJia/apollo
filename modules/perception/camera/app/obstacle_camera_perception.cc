@@ -435,7 +435,7 @@ bool ObstacleCameraPerception::Perception(
 
   if (!tracker_->Track(tracker_options, frame)) {
     AERROR << "Failed to track.";
-    return false;
+    return false;s
   }
   PERCEPTION_PERF_BLOCK_END_WITH_INDICATOR(frame->data_provider->sensor_name(),
                                            "Track");

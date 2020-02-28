@@ -278,7 +278,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
                                        const T *plane, const T *pts_c,
                                        const T *k_mat, int width, int height,
                                        T ratio_x_over_z, T *dx_dz,
-                                       bool check_lowerbound = true) {
+                                       bool check_lowerbound = true) { //lineSegment -> 线段
   const T Z_RESOLUTION = static_cast<T>(1e-1);
   const T Z_UNSTABLE_RATIO = static_cast<T>(0.3f);
 
@@ -289,7 +289,7 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
     return;
   }
   T pt_of_line_seg_l[3] = {0};
-  T pt_of_line_seg_r[3] = {0};
+  T pt_of_line_seg_r[3] = {0}; 
   bool is_front_l = common::IBackprojectPlaneIntersectionCanonical(
       ls.pt_start, k_mat, plane, pt_of_line_seg_l);//pt_start -> pt_of_line_seg_l
   bool is_front_r = common::IBackprojectPlaneIntersectionCanonical(
@@ -328,15 +328,15 @@ void GetDxDzForCenterFromGroundLineSeg(const LineSegment2D<T> &ls,
   range.second = common::ISqrt(common::ISqr(v[0]) + common::ISqr(v[2]));//两个投影点的距离，range貌似指定了坐标的范围
   T pts_local[12] = {0};
   common::IProjectThroughExtrinsic(rot, t, pts_c, pts_local);           //pts_c为相机坐标系下3dbox底面各角点的坐标
-  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);   //转为车辆坐标系pts_local(此时的坐标中心为pos->pt_of_line_seg_l)
+  common::IProjectThroughExtrinsic(rot, t, pts_c + 3, pts_local + 3);   //转为局部坐标系pts_local(此时的坐标中心为pos->pt_of_line_seg_l)
   common::IProjectThroughExtrinsic(rot, t, pts_c + 6, pts_local + 6);
   common::IProjectThroughExtrinsic(rot, t, pts_c + 9, pts_local + 9);
 
   common::IProjectThroughExtrinsic(rot, t, pt1, pt1_local); //rot^-1(pt1 - t) 相机在车辆坐标系下的位置
-  common::IProjectThroughExtrinsic(rot, t, pt2, pt2_local); //
+  common::IProjectThroughExtrinsic(rot, t, pt2, pt2_local); //归一化成像平面上物体的中心的投影
   T x[2] = {pt1_local[0], pt1_local[2]};
   T xp[2] = {pt2_local[0], pt2_local[2]};
-  common::ILineFit2d(x, xp, l);//通过两点x ,xp (x为相机中心在该坐标系下的位置，xp在该坐标系下车辆中心)得到直线l=ax+by+c
+  common::ILineFit2d(x, xp, l);//通过两点x ,xp (x为相机中心在该坐标系下的位置，xp在该坐标系下车辆中心)得到直线l=ax+by+c ;这两点组成的直线应该通过物体中心
 
   T zs[4] = {pts_local[2], pts_local[5], pts_local[8], pts_local[11]}; //zs 为3dbox各底面角点在局部坐标系(坐标中心为pos->pt_of_line_seg_l)下的z坐标
   T z_offset = static_cast<T>(0);

@@ -39,9 +39,9 @@ bool LocationRefinerObstaclePostprocessor::Init(
 
   AINFO << "Load postprocessor parameters from " << postprocessor_config
         << " \nmin_dist_to_camera: "
-        << location_refiner_param_.min_dist_to_camera()
-        << " \nroi_h2bottom_scale: "
-        << location_refiner_param_.roi_h2bottom_scale();
+        << location_refiner_param_.min_dist_to_camera() //30
+        << " \nroi_h2bottom_scale: "      
+        << location_refiner_param_.roi_h2bottom_scale();  //0.5
   return true;
 }
 
@@ -136,7 +136,7 @@ bool LocationRefinerObstaclePostprocessor::Process(
     memcpy(obj_postprocessor_options.plane, query_plane, sizeof(float) * 4);//通过标定获取平面的坐标(a,b,c,d)
 
     // changed to touching-ground center
-    object_center[1] += dimension_hwl[0] / 2; //此时相当于中心点接触地面
+    object_center[1] += dimension_hwl[0] / 2; //此时相当于中心点接触地面 注意之前transorform最后处理的时候object_center[1] -= dimension_hwl[0] / 2
     postprocessor_->PostProcessObjWithGround(
         obj_postprocessor_options, object_center, dimension_hwl, &rotation_y);
     object_center[1] -= dimension_hwl[0] / 2;

@@ -41,7 +41,7 @@ bool ObjPostProcessor::PostProcessObjWithGround(
 
   // soft constraints
   bool adjust_soft =
-      AdjustCenterWithGround(bbox, hwl, *ry, options.plane, center); //通过中心点投影位于平面内的约束进行中心点的更新。
+      AdjustCenterWithGround(bbox, hwl, *ry, options.plane, center); //通过中心点投影位于平面内的约束进行中心点的更新,使center逐渐接近于地平面
   if (center[2] > params_.dist_far) { //15.0
     return adjust_soft;
   }
@@ -83,7 +83,7 @@ bool ObjPostProcessor::AdjustCenterWithGround(const float *bbox,
   bool stop = false;
 
   // std::cout << "start to update the center..." << std::endl;
-  while (!stop) {
+  while (!stop) { //使center逐渐接近于地平面
     common::IProjectThroughIntrinsic(k_mat_, center, x); //center投影到图像坐标系 x
     x[0] *= common::IRec(x[2]);
     x[1] *= common::IRec(x[2]);//齐次坐标
@@ -164,7 +164,7 @@ bool ObjPostProcessor::PostRefineCenterWithGroundBoundary(
 int ObjPostProcessor::GetDepthXPair(const float *bbox, const float *hwl,
                                     const float *center, float ry,
                                     float *depth_pts, int *x_pts,
-                                    float *pts_c) const {
+                                    float *pts_c) const { //获得物体中心点在深度z(米)和图像投影点x(像素)的pair
   int y_min = height_;
   float w_half = hwl[1] / 2;
   float l_half = hwl[2] / 2;

@@ -732,7 +732,7 @@ int FusionCameraDetectionComponent::InternalProc(
         << camera_frame.calibration_service->QueryPitchAngle()
         << " | camera_grond_height "
         << camera_frame.calibration_service->QueryCameraToGroundHeight();
-  prefused_message->frame_->objects = camera_frame.tracked_objects;
+  prefused_message->frame_->objects = camera_frame.tracked_objects;//初始化一下
   // TODO(gaohan02, wanji): check the boxes with 0-width in perception-camera
   prefused_message->frame_->objects.clear();
   for (auto obj : camera_frame.tracked_objects) {

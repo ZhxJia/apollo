@@ -48,7 +48,7 @@ class LocationRefinerObstaclePostprocessor : public BaseObstaclePostprocessor {
 
  private:
   bool is_in_roi(const float pt[2], float img_w, float img_h, float v,
-                 float h_down) const {
+                 float h_down) const { //中间靠下的梯形区域    
     float x = pt[0];
     float y = pt[1];
     if (y < v) {  
