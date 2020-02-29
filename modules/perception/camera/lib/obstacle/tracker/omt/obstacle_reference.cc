@@ -185,7 +185,7 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
       float l[3] = {0};
       if (ground_estimator.GetGroundModel(l)) {
         double z_ground_reversed =
-            (-l[0] * supplement.box.ymax - l[2]) * common::IRec(l[1]);
+            (-l[0] * supplement.box.ymax - l[2]) * common::IRec(l[1]);//1/z
         double z_ground = common::IRec(z_ground_reversed);
         z_ground = std::max(z_ground, z_obj);
         float k2 = static_cast<float>(z_ground / frame->camera_k_matrix(1, 1));
@@ -220,7 +220,7 @@ void ObstacleReference::CorrectSize(CameraFrame *frame) {
         float cy = frame->camera_k_matrix(1, 2);
         cy = std::min(supplement.box.ymax - 1, cy);
         for (auto &&reference : reference_[sensor]) {
-          // pick out the refs close enough in y directions
+          // pick out the refs close enough in y directions 即利用相近位置的宽高比近似
           float dy = std::abs(reference.ymax - supplement.box.ymax);
           float scale_y = (supplement.box.ymax - cy) / (img_height_ - cy);
           float thres_dy =
