@@ -183,11 +183,11 @@ bool ObjMapper::Solve3dBbox(const ObjMapperOptions &options, float center[3],
   var_yaw = common::ISqrt(common::IRec(yaw_score_sdv + params_.eps_mapper)); //　１/标准差　数据越平均　该值越大
 
   float z = center[2];
-  float rz = z * params_.rz_ratio; // 0.1*z为z的变化率
+  float rz = z * params_.rz_ratio; // 0.1*z 为z的变化率
   float nr_bins_z = static_cast<float>(params_.nr_bins_z);//15.0
   std::vector<float> buffer(static_cast<size_t>(2 * nr_bins_z), 0);
   float *score_z = buffer.data();
-  float dz = 2 * rz / nr_bins_z;　//z步进（２*rz/15）
+  float dz = 2 * rz / nr_bins_z;　//z步进（2*rz/15）
   float z_start = std::max(z - rz, params_.depth_min);
   float z_end = z + rz;
   int count_z_test = 0;
@@ -234,7 +234,7 @@ void ObjMapper::PostRefineOrientation(const float *bbox, const float *hwl,
       continue;
     }//只计算ry_test与检测出的角度ry之差小于pi/2的角度范围
 
-    float score_test = GetProjectionScore(ry_test, bbox, hwl, center, true); //由ry_test投影得到的２d bbox 与检测bbox的交并比
+    float score_test = GetProjectionScore(ry_test, bbox, hwl, center, true); //由ry_test投影得到的2d bbox 与检测bbox的交并比
     if (score_test > score_best) {
       score_best = score_test;
       ry_best = ry_test;
@@ -242,7 +242,7 @@ void ObjMapper::PostRefineOrientation(const float *bbox, const float *hwl,
     ry_test += D_RY;
     ry_score_[count_bin++ % kNrBinsRy] = score_test;//记录这36分隔的角度对应匹配的分数
   }
-  common::IUnitize(ry_score_.data(), kNrBinsRy); //将这３６个分数单位化
+  common::IUnitize(ry_score_.data(), kNrBinsRy); //将这36个分数单位化
   if (score_best > params_.iou_high && score_cur < params_.iou_suc) {
     *ry = ry_best;
   }//iou_high 0.7  iou_suc =0.5 　若检测得到的角度的分数小于一定阈值　对角度进行修正

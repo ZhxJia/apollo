@@ -68,7 +68,7 @@ class SensorManager {
  private:
   inline std::string IntrinsicPath(const std::string& frame_id) {
     std::string intrinsics =
-        FLAGS_obs_sensor_intrinsic_path + "/" + frame_id + "_intrinsics.yaml";
+        FLAGS_obs_sensor_intrinsic_path + "/" + frame_id + "_intrinsics.yaml"; //FLAGS_obs_sensor_intrinsic_path为gflag读取命令行参数 "/apollo/modules/perception/data/params"
     return intrinsics;
   }
 

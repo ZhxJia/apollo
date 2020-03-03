@@ -61,11 +61,11 @@ bool ObstacleCameraPerception::Init(
     detector_init_options.conf_file = plugin_param.config_file(); //jac!!20/1/9: config_file:"../config.pt" yolo相关配置的文件路径和参数
     detector_init_options.gpu_id = perception_param_.gpu_id();
 
-    model = common::SensorManager::Instance()->GetUndistortCameraModel(
-        detector_param.camera_name());  //jac!!20/1/9: model 是BaseCamera类与Camera之间的一个unordered map
+    model = common::SensorManager::Instance()->GetUndistortCameraModel(   
+        detector_param.camera_name());  //jac!!20/1/9: model 是BaseCamera类与Camera之间的一个unordered map  //注：SensorManager类只有一个实例
     auto pinhole = static_cast<base::PinholeCameraModel *>(model.get()); //jac!!20/1/9: 返回model指向的指针并强制转换为PinholeCameraModel类
     name_intrinsic_map_.insert(std::pair<std::string, Eigen::Matrix3f>(
-        detector_param.camera_name(), pinhole->get_intrinsic_params())); //jac!!20/1/9: 相机名称与内参的map
+        detector_param.camera_name(), pinhole->get_intrinsic_params())); //jac!!20/1/9: 相机名称与内参的map 内参路径sensormanager类内存储
     detector_init_options.base_camera_model = model;
     std::shared_ptr<BaseObstacleDetector> detector_ptr(
         BaseObstacleDetectorRegisterer::GetInstanceByName(plugin_param.name()));//jac!!20/1/9: 根据name(YoloObstacleDetector)创建实例
