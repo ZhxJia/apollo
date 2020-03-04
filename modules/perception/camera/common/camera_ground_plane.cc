@@ -295,7 +295,7 @@ bool CameraGroundPlaneDetector::DetectGroundFromSamples(float *vd, int count_vd,
     int i2 = i << 1; //i2 =0 2 4 6
     vs[i] = vd[i2];
     ds[i] = vd[i2 + 1];
-  } //vs中保存了box底边的位置y，ds中保存了深度z
+  } //vs中保存了box底边的位置y，ds中保存了深度1/z
   int nr_inliers = 0;
   int *inliers = ss_int_.data();
   memset(inliers, 0, sizeof(int) * count_vd * 2);//将inliners 2*count_vd的空间置0

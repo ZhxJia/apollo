@@ -56,7 +56,7 @@ bool OMTObstacleTracker::Init(const ObstacleTrackerInitOptions &options) {
   height_ = options.image_height;
   reference_.Init(omt_param_.reference(), width_, height_);//jac!!20/1/11:传入omt.proto和config.pt中参数， 地平面参考类的初始化
   std::string type_change_cost =
-      GetAbsolutePath(options.root_dir, omt_param_.type_change_cost());//jac??20/1/11:并不明白这各type_change_cost（12*12）的含义
+      GetAbsolutePath(options.root_dir, omt_param_.type_change_cost());//jac??20/1/11:associate时类型切换代价
   std::ifstream fin(type_change_cost);
   CHECK(fin.is_open());
   kTypeAssociatedCost_.clear();
