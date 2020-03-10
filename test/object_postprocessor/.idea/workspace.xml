@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="object_postprocessor" targetName="object_postprocessor" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="fececb12-7123-4252-9cf6-fdaa4713cfb0" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ProjectId" id="1YK7AswH2TjWPFyCKU8OUrwyrHY" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RunManager">
+    <configuration name="object_postprocessor" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="object_postprocessor" TARGET_NAME="object_postprocessor" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="object_postprocessor" RUN_TARGET_NAME="object_postprocessor">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="fececb12-7123-4252-9cf6-fdaa4713cfb0" name="Default Changelist" comment="" />
+      <created>1582679291383</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1582679291383</updated>
+      <workItem from="1582679293659" duration="5521000" />
+      <workItem from="1582782944847" duration="993000" />
+      <workItem from="1582791866923" duration="5475000" />
+      <workItem from="1582853306843" duration="1779000" />
+      <workItem from="1583668048010" duration="54000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2175" y="154" width="424" height="484" key="FileChooserDialogImpl" timestamp="1583668085142">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state x="2175" y="154" width="424" height="484" key="FileChooserDialogImpl/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583668085142" />
+    <state width="1261" height="194" key="GridCell.Tab.0.bottom" timestamp="1582899525458">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="1261" height="194" key="GridCell.Tab.0.bottom/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1582899525458" />
+    <state width="1261" height="194" key="GridCell.Tab.0.center" timestamp="1582899525458">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="1261" height="194" key="GridCell.Tab.0.center/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1582899525458" />
+    <state width="1261" height="194" key="GridCell.Tab.0.left" timestamp="1582899525458">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="1261" height="194" key="GridCell.Tab.0.left/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1582899525458" />
+    <state width="1261" height="194" key="GridCell.Tab.0.right" timestamp="1582899525458">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="1261" height="194" key="GridCell.Tab.0.right/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1582899525458" />
+    <state width="640" height="195" key="ImportCMakeProjectWizard.bottomPanel" timestamp="1583668100017">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="640" height="195" key="ImportCMakeProjectWizard.bottomPanel/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583668100017" />
+    <state width="640" height="455" key="ImportCMakeProjectWizard.topPanel" timestamp="1583668100017">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state width="640" height="455" key="ImportCMakeProjectWizard.topPanel/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583668100017" />
+    <state x="2048" y="224" key="com.intellij.ide.util.TipDialog" timestamp="1583668048998">
+      <screen x="1680" y="0" width="1366" height="768" />
+    </state>
+    <state x="2048" y="224" key="com.intellij.ide.util.TipDialog/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583668048998" />
+  </component>
+</project>

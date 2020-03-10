@@ -1,0 +1,8 @@
+/home/jachin/Downloads/clion-2019.3.2/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/jachin/space/apollo_hit/test/yolo_detector_test
+find Protobuf:/usr/local/include
+find glog:/usr/local/lib/libglog.a
+find gflag:/usr/lib/x86_64-linux-gnu/libgflags.so
+version:
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug
