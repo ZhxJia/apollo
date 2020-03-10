@@ -208,7 +208,7 @@ namespace apollo {
 
             void fill_base(base::ObjectPtr obj, const float *bbox);
 
-            const float *get_gpu_data(bool flag, const caffe::Blob<float> &blob);
+            const float *get_cpu_data(bool flag, const caffe::Blob<float> &blob);
 
             int get_area_id(float visible_ratios[4]);
 

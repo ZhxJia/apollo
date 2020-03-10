@@ -18,6 +18,81 @@ namespace apollo {
                                                        float light_vis_conf_threshold, float light_swt_conf_threshold,
                                                        caffe::Blob<float> *overlapped, caffe::Blob<float> *idx_sm,
                                                        std::vector<base::ObjectPtr> *objects) {
+                bool multi_scale = false;
+                if (yolo_blobs.det2_obj_blob) {
+                    multi_scale = true;
+                }
+                int num_classes = types.size();
+                int batch = yolo_blobs.det1_obj_blob->shape(0);
+                int num_anchor = yolo_blobs.anchor_blob->shape(2);
+                int num_anchor_per_scale = num_anchor;
+                if (multi_scale) {
+                    num_anchor_per_scale /= numScales;
+                }
+                CHECK_EQ(batch, 1) << "batch size should be 1!";
+                std::vector<int> height_vec, width_vec, num_candidates_vec;
+                height_vec.push_back(yolo_blobs.det1_obj_blob->shape(1));
+                width_vec.push_back(yolo_blobs.det1_obj_blob->shape(2));
+                if (multi_scale) {
+                    height_vec.push_back(yolo_blobs.det2_obj_blob->shape(1));
+                    height_vec.push_back(yolo_blobs.det3_obj_blob->shape(1));
+                    width_vec.push_back(yolo_blobs.det2_obj_blob->shape(2));
+                    width_vec.push_back(yolo_blobs.det3_obj_blob->shape(2));
+                }
+                for (size_t i = 0; i < height_vec.size(); i++) {
+                    num_candidates_vec.push_back(
+                            height_vec[i] * width_vec[i] * num_anchor_per_scale);
+                }
+                const float *loc_data_vec[3] = {yolo_blobs.det1_loc_blob->cpu_data(),
+                                                yolo_blobs.det2_loc_blob ? yolo_blobs.det2_loc_blob->cpu_data()
+                                                                         : nullptr,
+                                                yolo_blobs.det3_loc_blob ? yolo_blobs.det3_loc_blob->cpu_data()
+                                                                         : nullptr};
+                const float *obj_data_vec[3] = {yolo_blobs.det1_obj_blob->cpu_data(),
+                                                yolo_blobs.det2_obj_blob ? yolo_blobs.det2_obj_blob->cpu_data()
+                                                                         : nullptr,
+                                                yolo_blobs.det3_obj_blob ? yolo_blobs.det3_obj_blob->cpu_data()
+                                                                         : nullptr};
+                const float *cls_data_vec[3] = {yolo_blobs.det1_cls_blob->cpu_data(),
+                                                yolo_blobs.det2_cls_blob ? yolo_blobs.det2_cls_blob->cpu_data()
+                                                                         : nullptr,
+                                                yolo_blobs.det3_cls_blob ? yolo_blobs.det3_cls_blob->cpu_data()
+                                                                         : nullptr};
+                const float *ori_data_vec[3] = {get_cpu_data(model_param.with_box3d(),
+                                                             *yolo_blobs.det1_ori_blob),
+                                                multi_scale ? get_cpu_data(model_param.with_box3d(),
+                                                                           *yolo_blobs.det2_ori_blob) : nullptr,
+                                                multi_scale ? get_cpu_data(model_param.with_box3d(),
+                                                                           *yolo_blobs.det3_ori_blob) : nullptr};
+                const float *dim_data_vec[3] = {get_cpu_data(model_param.with_box3d(),
+                                                             *yolo_blobs.det1_dim_blob),
+                                                multi_scale ? get_cpu_data(model_param.with_box3d(),
+                                                                           *yolo_blobs.det2_dim_blob) : nullptr,
+                                                multi_scale ? get_cpu_data(model_param.with_box3d(),
+                                                                           *yolo_blobs.det3_dim_blob) : nullptr};
+                AINFO << "cls_data_vec: " << yolo_blobs.det1_cls_blob->cpu_data()
+                      << " ori_data_vec: " << obj_data_vec[0];
+                //TODO[KaWai]: add 3 scale frbox data and light data.
+                const float *lof_data = get_cpu_data(
+                        model_param.with_frbox(), *yolo_blobs.lof_blob);
+                const float *lor_data = get_cpu_data(
+                        model_param.with_frbox(), *yolo_blobs.lor_blob);
+
+                const float *area_id_data = get_cpu_data(
+                        model_param.num_areas() > 0, *yolo_blobs.area_id_blob);
+                const float *visible_ratio_data = get_cpu_data(
+                        model_param.with_ratios(), *yolo_blobs.visible_ratio_blob);
+                const float *cut_off_ratio_data = get_cpu_data(
+                        model_param.with_ratios(), *yolo_blobs.cut_off_ratio_blob);
+
+                const auto &with_lights = model_param.with_lights();
+                const float *brvis_data = get_cpu_data(with_lights, *yolo_blobs.brvis_blob);
+                const float *brswt_data = get_cpu_data(with_lights, *yolo_blobs.brswt_blob);
+                const float *ltvis_data = get_cpu_data(with_lights, *yolo_blobs.ltvis_blob);
+                const float *ltswt_data = get_cpu_data(with_lights, *yolo_blobs.ltswt_blob);
+                const float *rtvis_data = get_cpu_data(with_lights, *yolo_blobs.rtvis_blob);
+                const float *rtswt_data = get_cpu_data(with_lights, *yolo_blobs.rtswt_blob);
+
 
 
             }

@@ -413,6 +413,11 @@ namespace apollo {
                 return area_id;
             }
 
+            const float *get_cpu_data(bool flag, const caffe::Blob<float> &blob) {
+                return flag ? blob.cpu_data() : nullptr;
+            }
+
+
         }  // namespace camera
     }  // namespace perception
 }  // namespace apollo

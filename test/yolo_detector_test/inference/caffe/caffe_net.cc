@@ -127,6 +127,7 @@ void CaffeNet::Infer() {
     auto caffe_blob = net_->blob_by_name(name);
     if (caffe_blob != nullptr && blob != nullptr) {
       blob->Reshape(caffe_blob->shape());
+      blob->mutable_cpu_data();
 //      cudaMemcpy(blob->mutable_gpu_data(), caffe_blob->gpu_data(),
 //                 caffe_blob->count() * sizeof(float), cudaMemcpyDeviceToDevice);
     }
