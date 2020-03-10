@@ -4,13 +4,69 @@
 
 #include "yolo_net.h"
 #include "cyber/common/file.h"
-
+#include "common/util.h"
 
 namespace apollo {
     namespace perception {
         namespace camera {
 
             YoloObstacleDetector::YoloObstacleDetector() {}
+
+            void YoloObstacleDetector::get_objects_cpu(const YoloBlobs &yolo_blobs,
+                                                       const std::vector<base::ObjectSubType> &types,
+                                                       const NMSParam &nms, const yolo::ModelParam &model_param,
+                                                       float light_vis_conf_threshold, float light_swt_conf_threshold,
+                                                       caffe::Blob<float> *overlapped, caffe::Blob<float> *idx_sm,
+                                                       std::vector<base::ObjectPtr> *objects) {
+
+
+            }
+
+            void YoloObstacleDetector::WrapInputLayer(std::vector<cv::Mat> *input_channels) {
+                auto input_blob = inference_->get_blob(yolo_param_.net_param().input_blob());
+                int width = input_blob->shape(2);
+                int height = input_blob->shape(1);
+                float *input_data = input_blob->mutable_cpu_data();
+
+                for (int i = 0; i < input_blob->shape(3); ++i) {
+                    cv::Mat channel(height, width, CV_32FC1, input_data);
+                    input_channels->push_back(channel);
+                    input_data += width * height;
+                }
+
+            }
+
+            void YoloObstacleDetector::Preprocess(const cv::Mat &img, std::vector<cv::Mat> *input_channels) {
+
+                cv::Mat sample_resized;
+
+                if (img.size() != input_geometry_) {
+                    cv::resize(img, sample_resized, input_geometry_);
+                } else {
+                    sample_resized = img;
+                }
+//                AINFO << "size:" << width_;
+//                cv::Mat sample_sign;
+//                sample_resized.convertTo(sample_sign,CV_32SC3);
+//                cv::Mat mean_ = cv::Mat(input_geometry_,CV_32SC3,cv::Scalar(95,99,96));
+//
+//                cv::Mat sample_normalized;
+//                cv::subtract(sample_sign,mean_,sample_normalized);
+//
+                cv::Mat sample_float;
+//                sample_normalized.convertTo(sample_float,CV_32FC3);
+                sample_resized.convertTo(sample_float, CV_32FC3);
+                cv::split(sample_float, *input_channels);
+//                cv::imshow("s",sample_float);
+//                cv::waitKey(0);
+
+
+                auto input_blob = inference_->get_blob(yolo_param_.net_param().input_blob());
+//                AINFO << "input channels：" << reinterpret_cast<float*>(input_channels->at(0).data) << "  blob:" <<input_blob->cpu_data();
+                CHECK(reinterpret_cast<float *>(input_channels->at(0).data)
+                      == input_blob->cpu_data())
+                << "Input channels are not wrapping the input layer of the network.";
+            }
 
             void YoloObstacleDetector::LoadInputShape(
                     const yolo::ModelParam &model_param) {
@@ -42,19 +98,60 @@ namespace apollo {
 
             void YoloObstacleDetector::LoadParam(const yolo::YoloParam &yolo_param) {
                 const auto &model_param = yolo_param.model_param();
+                confidence_threshold_ = model_param.confidence_threshold();
+                light_vis_conf_threshold_ = model_param.light_vis_conf_threshold();
+                light_swt_conf_threshold_ = model_param.light_swt_conf_threshold();
+                min_dims_.min_2d_height = model_param.min_2d_height();
+                min_dims_.min_3d_height = model_param.min_3d_height();
+                min_dims_.min_3d_width = model_param.min_3d_width();
+                min_dims_.min_3d_length = model_param.min_3d_length();
+                ori_cycle_ = model_param.ori_cycle();
 
+                border_ratio_ = model_param.border_ratio();
+
+                //init NMS
+                auto const &nms_param = yolo_param.nms_param();
+                nms_.sigma = nms_param.sigma();
+                nms_.type = nms_param.type();
+                nms_.threshold = nms_param.threshold();
+                nms_.inter_cls_nms_thresh = nms_param.inter_cls_nms_thresh();
+                nms_.inter_cls_conf_thresh = nms_param.inter_cls_conf_thresh();
 
             }
+
             bool YoloObstacleDetector::Init() {
 
                 const std::string proto_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half/deploy.pt";
                 const std::string weight_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half/deploy.model";
                 const std::string config_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half-config.pt";
+                const std::string anchors_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half/anchors.txt";
+                const std::string types_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half/types.txt";
+                const std::string expand_file = "/home/jachin/space/apollo_hit/test/yolo_detector_test/data/yolo/3d-r4-half/expand.txt";
 
                 CHECK((cyber::common::GetProtoFromFile(config_file, &yolo_param_)));
                 const auto &model_param = yolo_param_.model_param();
+                proto_file_ = proto_file;
+                weight_file_ = weight_file;
 
                 LoadInputShape(model_param);
+                LoadParam(yolo_param_);
+                min_dims_.min_2d_height /= static_cast<float>(height_);
+
+                if (!LoadAnchors(anchors_file, &anchors_)) {
+                    return false;
+                }
+                if (!LoadTypes(types_file, &types_)) {
+                    return false;
+                }
+                if (!LoadExpand(expand_file, &expands_)) {
+                    return false;
+                }
+                CHECK(expands_.size() == types_.size());
+                if (!InitNet(yolo_param_)) {
+                    return false;
+                }
+                InitYoloBlob(yolo_param_.net_param());
+
 
             }
 
@@ -75,6 +172,31 @@ namespace apollo {
 
             }
 
+            bool YoloObstacleDetector::Detect(const cv::Mat &img) {
+                if (!img.data) {
+                    AERROR << "imgdata is empty";
+                }
+
+                std::vector<cv::Mat> input_channels;
+
+                auto input_blob = inference_->get_blob(yolo_param_.net_param().input_blob());
+
+                AINFO << "input_blob_shape=" << "[" << input_blob->shape(0) << "," << input_blob->shape(1)
+                      << "," << input_blob->shape(2) << "," << input_blob->shape(3) << "]";
+
+                WrapInputLayer(&input_channels);
+
+                Preprocess(img, &input_channels);
+
+                ///detection part
+                inference_->Infer();
+
+                get_objects_cpu(yolo_blobs_, types_, nms_, yolo_param_.model_param(),
+                                light_vis_conf_threshold_, light_swt_conf_threshold_,
+                                overlapped_.get(), idx_sm_.get(), &(detected_objects_));
+
+
+            }
 
             bool YoloObstacleDetector::InitNet(const yolo::YoloParam &yolo_param) {
 
@@ -132,6 +254,7 @@ namespace apollo {
                 }
                 //net forward
                 inference_->Infer();
+
                 return true;
             }
 
@@ -160,6 +283,81 @@ namespace apollo {
                 yolo_blobs_.res_cls_blob.reset(new caffe::Blob<float>(
                         1, 1, static_cast<int>(types_.size() + 1), obj_size));
                 yolo_blobs_.res_cls_blob->cpu_data();
+
+                overlapped_.reset(new caffe::Blob<float>(std::vector<int>{obj_k_, obj_k_}));
+                //overlapped_->cpu_data();
+                idx_sm_.reset(new caffe::Blob<float>(std::vector<int>{obj_k_}));
+
+                yolo_blobs_.anchor_blob.reset(
+                        new caffe::Blob<float>(1, 1, static_cast<int>(anchors_.size() / 2), 2));
+                yolo_blobs_.expand_blob.reset(
+                        new caffe::Blob<float>(1, 1, 1, static_cast<int>(expands_.size())));
+                auto expand_cpu_data = yolo_blobs_.expand_blob->mutable_cpu_data();
+                memcpy(expand_cpu_data, expands_.data(), expands_.size() * sizeof(float));
+                auto anchor_cpu_data = yolo_blobs_.anchor_blob->mutable_cpu_data();
+                memcpy(anchor_cpu_data, anchors_.data(), anchors_.size() * sizeof(float));
+
+                yolo_blobs_.det1_loc_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_loc_blob());
+                yolo_blobs_.det1_obj_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_obj_blob());
+                yolo_blobs_.det1_cls_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_cls_blob());
+                yolo_blobs_.det1_ori_conf_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_ori_conf_blob());
+                yolo_blobs_.det1_ori_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_ori_blob());
+                yolo_blobs_.det1_dim_blob =
+                        inference_->get_blob(yolo_param_.net_param().det1_dim_blob());
+                yolo_blobs_.det2_loc_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_loc_blob());
+                yolo_blobs_.det2_obj_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_obj_blob());
+                yolo_blobs_.det2_cls_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_cls_blob());
+                yolo_blobs_.det2_ori_conf_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_ori_conf_blob());
+                yolo_blobs_.det2_ori_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_ori_blob());
+                yolo_blobs_.det2_dim_blob =
+                        inference_->get_blob(yolo_param_.net_param().det2_dim_blob());
+                yolo_blobs_.det3_loc_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_loc_blob());
+                yolo_blobs_.det3_obj_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_obj_blob());
+                yolo_blobs_.det3_cls_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_cls_blob());
+                yolo_blobs_.det3_ori_conf_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_ori_conf_blob());
+                yolo_blobs_.det3_ori_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_ori_blob());
+                yolo_blobs_.det3_dim_blob =
+                        inference_->get_blob(yolo_param_.net_param().det3_dim_blob());
+
+                yolo_blobs_.lof_blob =
+                        inference_->get_blob(yolo_param_.net_param().lof_blob());
+                yolo_blobs_.lor_blob =
+                        inference_->get_blob(yolo_param_.net_param().lor_blob());
+
+                yolo_blobs_.brvis_blob =
+                        inference_->get_blob(yolo_param_.net_param().brvis_blob());
+                yolo_blobs_.brswt_blob =
+                        inference_->get_blob(yolo_param_.net_param().brswt_blob());
+                yolo_blobs_.ltvis_blob =
+                        inference_->get_blob(yolo_param_.net_param().ltvis_blob());
+                yolo_blobs_.ltswt_blob =
+                        inference_->get_blob(yolo_param_.net_param().ltswt_blob());
+                yolo_blobs_.rtvis_blob =
+                        inference_->get_blob(yolo_param_.net_param().rtvis_blob());
+                yolo_blobs_.rtswt_blob =
+                        inference_->get_blob(yolo_param_.net_param().rtswt_blob());
+
+                yolo_blobs_.area_id_blob =
+                        inference_->get_blob(yolo_param_.net_param().area_id_blob());
+                yolo_blobs_.visible_ratio_blob =
+                        inference_->get_blob(yolo_param_.net_param().visible_ratio_blob());
+                yolo_blobs_.cut_off_ratio_blob =
+                        inference_->get_blob(yolo_param_.net_param().cut_off_ratio_blob());
 
 
             }

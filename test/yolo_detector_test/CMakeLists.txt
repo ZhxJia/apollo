@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
+include_directories(/home/jachin/space/apollo_hit/test/yolo_detector_test)
 #add_executable(yolo_detector_test
 #        yolo_detector.cpp yolo_detector.h opencv3t4.h yolo_obstacle_detector.cpp yolo_obstacle_detector.h interface/base_feature_extrator.h interface/base_obstacle_detector.h interface/base_init_options.h)
 add_executable(yolo_detector_test
@@ -12,7 +13,22 @@ add_executable(yolo_detector_test
           yolo_net.cpp yolo_net.h base/object_types.h   region_output.h region_output.cc cyber/common/file.cc cyber/common/file.h  inference/caffe/ inference/inference_factory.cc inference/inference_factory.h
           detector.cpp detector.h
           inference/caffe/caffe_net.cc inference/caffe/caffe_net.h
+          common/util.cc common/util.h
+          common/camera_frame.h
+
+
+
         ) #注意依赖之间的先后顺序
+
+#locate caffe
+include_directories(  /home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/include
+        /usr/local/include
+        /usr/include
+        /usr/include/eigen3
+        caffe-apollo/src/caffe)
+link_directories( yolo_detector_test /home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/lib)
+target_link_libraries(yolo_detector_test /home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/lib/libcaffe.so)
+
 
 find_package(Boost 1.55.0 REQUIRED COMPONENTS system filesystem)
 include_directories(yolo_detector_test ${Boost_INCLUDE_DIRS})
@@ -39,13 +55,8 @@ include_directories(${GFLAGS_INCLUDE_DIRS})
 target_link_libraries(yolo_detector_test ${GFLAGS_LIBRARIES})
 message("find gflag:${GFLAGS_LIBRARIES}")
 message("version:${GFLAGS_VERSION}")
-#locate caffe
-include_directories(  caffe-apollo/caffe-output/include
-                     /usr/local/include
-                     /usr/include
-                     /usr/include/eigen3)
-link_directories( caffe-apollo/caffe-output/lib)
-target_link_libraries(yolo_detector_test /home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/lib/libcaffe.so)
+
+
 
 #locate opencv
 find_package(OpenCV REQUIRED)

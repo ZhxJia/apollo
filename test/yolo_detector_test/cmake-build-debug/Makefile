@@ -123,6 +123,33 @@ yolo_detector_test/fast:
 	$(MAKE) -f CMakeFiles/yolo_detector_test.dir/build.make CMakeFiles/yolo_detector_test.dir/build
 .PHONY : yolo_detector_test/fast
 
+common/util.o: common/util.cc.o
+
+.PHONY : common/util.o
+
+# target to build an object file
+common/util.cc.o:
+	$(MAKE) -f CMakeFiles/yolo_detector_test.dir/build.make CMakeFiles/yolo_detector_test.dir/common/util.cc.o
+.PHONY : common/util.cc.o
+
+common/util.i: common/util.cc.i
+
+.PHONY : common/util.i
+
+# target to preprocess a source file
+common/util.cc.i:
+	$(MAKE) -f CMakeFiles/yolo_detector_test.dir/build.make CMakeFiles/yolo_detector_test.dir/common/util.cc.i
+.PHONY : common/util.cc.i
+
+common/util.s: common/util.cc.s
+
+.PHONY : common/util.s
+
+# target to generate assembly for a file
+common/util.cc.s:
+	$(MAKE) -f CMakeFiles/yolo_detector_test.dir/build.make CMakeFiles/yolo_detector_test.dir/common/util.cc.s
+.PHONY : common/util.cc.s
+
 cyber/common/file.o: cyber/common/file.cc.o
 
 .PHONY : cyber/common/file.o
@@ -321,6 +348,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... yolo_detector_test"
 	@echo "... edit_cache"
+	@echo "... common/util.o"
+	@echo "... common/util.i"
+	@echo "... common/util.s"
 	@echo "... cyber/common/file.o"
 	@echo "... cyber/common/file.i"
 	@echo "... cyber/common/file.s"

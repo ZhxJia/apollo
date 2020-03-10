@@ -556,6 +556,10 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
 INSTANTIATE_CLASS(Blob);
 template class Blob<int>;
 template class Blob<unsigned int>;
+template class Blob<uint8_t>;
+template class Blob<bool>;
+template class Blob<float>;
+template class Blob<double>;
 
 }  // namespace caffe
 

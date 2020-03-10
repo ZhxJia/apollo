@@ -38,11 +38,24 @@ namespace apollo {
 
                 bool Init();
 
+                bool Detect(const cv::Mat &img);
+
+                void WrapInputLayer(std::vector<cv::Mat> *input_channels);
+
+                void Preprocess(const cv::Mat &img, std::vector<cv::Mat> *input_channels);
+
+                void get_objects_cpu(const YoloBlobs &yolo_blobs, const std::vector<base::ObjectSubType> &types,
+                                     const NMSParam &nms, const yolo::ModelParam &model_param,
+                                     float light_vis_conf_threshold, float light_swt_conf_threshold,
+                                     caffe::Blob<float> *overlapped, caffe::Blob<float> *idx_sm,
+                                     std::vector<base::ObjectPtr> *objects);
+
                 bool Load();
 
             protected:
 
                 void LoadInputShape(const yolo::ModelParam &model_param);
+
                 void LoadParam(const yolo::YoloParam &yolo_param);
 
                 bool InitNet(const yolo::YoloParam &yolo_param);
@@ -58,12 +71,9 @@ namespace apollo {
 
                 yolo::YoloParam yolo_param_;
                 std::shared_ptr<inference::Inference> inference_;
-
                 std::vector<float> anchors_;
                 std::vector<base::ObjectSubType> types_;
-
-                MinDims min_dims_;
-                YoloBlobs yolo_blobs_;
+                std::vector<float> expands_;
 
                 //load shape
                 int height_ = 800;
@@ -75,7 +85,25 @@ namespace apollo {
                 float confidence_threshold_ = 0.f;
                 float light_vis_conf_threshold_ = 0.f;
                 float light_swt_conf_threshold_ = 0.f;
-                
+                MinDims min_dims_;
+                //nms param
+                NMSParam nms_;
+                int obj_k_ = kMaxObjSize;
+
+
+                float border_ratio_ = 0.f;
+
+                //InitYoloBlob
+                YoloBlobs yolo_blobs_;
+                std::shared_ptr<caffe::Blob<float>> overlapped_ = nullptr;
+                std::shared_ptr<caffe::Blob<float>> idx_sm_ = nullptr;
+
+
+                //input shape
+                cv::Size input_geometry_ = cv::Size(1440, 576);
+                //detected_objects
+                std::vector<base::ObjectPtr> detected_objects_;
+
             };
 
         }//camera

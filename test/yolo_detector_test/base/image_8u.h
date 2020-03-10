@@ -99,7 +99,7 @@ class Image8U {
 
   uint8_t *mutable_cpu_data() { return mutable_cpu_ptr(0); }
 
-  uint8_t *mutable_gpu_data() { return mutable_gpu_ptr(0); }
+//  uint8_t *mutable_gpu_data() { return mutable_gpu_ptr(0); }
 
   const uint8_t *cpu_data() const { return cpu_ptr(0); }
 
@@ -117,9 +117,9 @@ class Image8U {
     return blob_->mutable_cpu_data() + blob_->offset({row, 0, 0}) + offset_;
   }
 
-  uint8_t *mutable_gpu_ptr(int row = 0) {
-    return blob_->mutable_gpu_data() + blob_->offset({row, 0, 0}) + offset_;
-  }
+//  uint8_t *mutable_gpu_ptr(int row = 0) {
+//    return blob_->mutable_gpu_data() + blob_->offset({row, 0, 0}) + offset_;
+//  }
 
   Color type() const { return type_; }
   int rows() const { return rows_; }

@@ -15,15 +15,13 @@
  *****************************************************************************/
 #pragma once
 
-#include <nppi.h>
 
 #include <memory>
 #include <string>
 
-#include "modules/perception/base/blob.h"
-#include "modules/perception/base/box.h"
-#include "modules/perception/base/image.h"
-#include "modules/perception/camera/common/undistortion_handler.h"
+#include "base/box.h"
+#include "base/image.h"
+
 
 namespace apollo {
 namespace perception {
@@ -100,7 +98,7 @@ class DataProvider {
   // @param [in]: options
   // @param [in/out]: NHWC blob (4D)
   // image blob with specified size should be filled, required.
-  bool GetImageBlob(const ImageOptions &options, base::Blob<uint8_t> *blob);
+  bool GetImageBlob(const ImageOptions &options, caffe::Blob<uint8_t> *blob);
 
   // @brief: get Image8U converted from raw message.
   // @param [in]: options
@@ -132,9 +130,9 @@ class DataProvider {
   bool rgb_ready_ = false;
   bool bgr_ready_ = false;
 
-  base::Blob<float> temp_float_;
-  base::Blob<uint8_t> temp_uint8_;
-  std::shared_ptr<UndistortionHandler> handler_ = nullptr;
+  caffe::Blob<float> temp_float_;
+  caffe::Blob<uint8_t> temp_uint8_;
+
 };  // class DataProvider
 
 }  // namespace camera

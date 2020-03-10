@@ -6,5 +6,5 @@ CXX_FLAGS = -g   -std=gnu++14
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test -I/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/include -I/usr/include/eigen3 -isystem /usr/local/opencv4/include/opencv4 
+CXX_INCLUDES = -I/home/jachin/space/apollo_hit/test/yolo_detector_test -I/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/include -I/usr/include/eigen3 -I/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/src/caffe -I/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test -isystem /usr/local/opencv4/include/opencv4 
 

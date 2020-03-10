@@ -5,7 +5,9 @@
 
 #include "detector.h"
 #include "yolo_net.h"
-
+#include <memory>
+#include <fstream>
+#include "caffe/caffe.hpp"
 
 using namespace caffe;
 using namespace std;
@@ -60,11 +62,21 @@ namespace apollo {
             }
 
 
+
             int main() {
 
+
+
+                const std::string image_path = "../test.jpg";
                 detector_.reset(new YoloObstacleDetector());
                 detector_->Init();
 
+
+                auto cv_img = cv::imread(image_path,cv::IMREAD_COLOR);
+
+                detector_->Detect(cv_img);
+
+                cout << "done!" << endl;
                 return 0;
             }
         }//camera
@@ -75,4 +87,5 @@ int main() {
 
     cout << "detector test" << endl;
     return apollo::perception::camera::main();
+
 }

@@ -18,12 +18,13 @@
 #include <memory>
 #include <vector>
 
-#include "modules/perception/base/hdmap_struct.h"
-#include "modules/perception/base/lane_struct.h"
-#include "modules/perception/base/object_pool_types.h"
-#include "modules/perception/base/traffic_light.h"
-#include "modules/perception/camera/common/data_provider.h"
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include "common/data_provider.h"
+#include "base/object.h"
+#define CPU_ONLY
+#include "caffe/caffe.hpp"
 namespace apollo {
 namespace perception {
 namespace camera {
@@ -46,7 +47,7 @@ struct CameraFrame {
   // camera to world pose
   Eigen::Affine3d camera2world_pose = Eigen::Affine3d::Identity();
   // hdmap struct
-  base::HdmapStructPtr hdmap_struct = nullptr;
+
   // tracker proposed objects
   std::vector<base::ObjectPtr> proposed_objects;
   // segmented objects
@@ -55,12 +56,10 @@ struct CameraFrame {
   std::vector<base::ObjectPtr> tracked_objects;
   // feature of all detected object ( num x dim)
   // detect lane mark info
-  std::vector<base::LaneLine> lane_objects;
   std::vector<float> pred_vpt;
-  std::shared_ptr<base::Blob<float>> track_feature_blob = nullptr;
-  std::shared_ptr<base::Blob<float>> lane_detected_blob = nullptr;
+  std::shared_ptr<caffe::Blob<float>> track_feature_blob = nullptr;
+  std::shared_ptr<caffe::Blob<float>> lane_detected_blob = nullptr;
   // detected traffic lights
-  std::vector<base::TrafficLightPtr> traffic_lights;
 
   void Reset() {}
 };  // struct CameraFrame

@@ -27,13 +27,13 @@ CaffeNet::CaffeNet(const std::string &net_file, const std::string &model_file,
     : net_file_(net_file), model_file_(model_file), output_names_(outputs) {}
 
 bool CaffeNet::Init(const std::map<std::string, std::vector<int>> &shapes) {
-  if (gpu_id_ >= 0) {
-    caffe::Caffe::SetDevice(gpu_id_);
-    caffe::Caffe::set_mode(caffe::Caffe::GPU);
-    caffe::Caffe::DeviceQuery();
-  } else {
+//  if (gpu_id_ >= 0) {
+//    caffe::Caffe::SetDevice(gpu_id_);
+//    caffe::Caffe::set_mode(caffe::Caffe::GPU);
+//    caffe::Caffe::DeviceQuery();
+//  } else {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
-  }
+//  }
 
   // init Net
   net_.reset(new caffe::Net<float>(net_file_, caffe::TEST));
@@ -117,7 +117,7 @@ void CaffeNet::Infer() {
   for (auto name : output_names_) {
     auto blob = get_blob(name);
     if (blob != nullptr) {
-      blob->gpu_data();
+      blob->cpu_data();
     }
   }
 

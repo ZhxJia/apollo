@@ -34,9 +34,11 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test"/>
 					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/include"/>
 					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/src/caffe"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test"/>
 					<Add directory="/usr/local/opencv4/include/opencv4"/>
 					<Add directory="/usr/include/c++/7"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
@@ -61,9 +63,11 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test"/>
 					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/caffe-output/include"/>
 					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/caffe-apollo/src/caffe"/>
+					<Add directory="/home/jachin/space/apollo_hit/test/yolo_detector_test/yolo_detector_test"/>
 					<Add directory="/usr/local/opencv4/include/opencv4"/>
 					<Add directory="/usr/include/c++/7"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
@@ -93,6 +97,15 @@
 			</Target>
 		</Build>
 		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/base/object_types.h">
+			<Option target="yolo_detector_test"/>
+		</Unit>
+		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/common/camera_frame.h">
+			<Option target="yolo_detector_test"/>
+		</Unit>
+		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/common/util.cc">
+			<Option target="yolo_detector_test"/>
+		</Unit>
+		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/common/util.h">
 			<Option target="yolo_detector_test"/>
 		</Unit>
 		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/cyber/common/file.cc">

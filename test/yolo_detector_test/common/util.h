@@ -21,11 +21,12 @@
 #include <string>
 #include <vector>
 
+#define CPU_ONLY
+#include "caffe/caffe.hpp"
 
-
-#include "../base/image.h"
-#include "../base/object.h"
-#include "../base/object_types.h"
+#include "base/image.h"
+#include "base/object.h"
+#include "base/object_types.h"
 
 namespace apollo {
 namespace perception {
