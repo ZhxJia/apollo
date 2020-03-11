@@ -76,7 +76,7 @@ float jaccard_overlap_gpu(const float *bbox1,
     return inter_size / (bbox1_size + bbox2_size - inter_size);
   }
 }
-
+//每个线程处理一个anchorbox，n为中的anchor数目
 __global__ void get_object_kernel(int n,
                                   const float *loc_data,
                                   const float *obj_data,
@@ -114,13 +114,13 @@ __global__ void get_object_kernel(int n,
                                   int res_cls_offset,
                                   int all_scales_num_candidates) {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n);
-       i += blockDim.x * gridDim.x) {
-    int box_block = kBoxBlockSize;
+       i += blockDim.x * gridDim.x) { //获取当前的线程id
+    int box_block = kBoxBlockSize; 
 
     int idx = i;
     int c = idx % num_anchors;
     idx = idx / num_anchors;
-    int w = idx % width;
+    int w = idx % width; //idx%90
     idx = idx / width;
     int h = idx;
     int loc_index = (h * width + w) * num_anchors + c;
@@ -151,7 +151,7 @@ __global__ void get_object_kernel(int n,
                  + res_cls_offset + i] = max_prob;
 
     auto &&dst_ptr = res_box_data + i * box_block;
-    hw += expand_data[max_index];
+    hw += expand_data[max_index]; //根据概率最高的类别扩充box宽度,此处是若检测到人的话，让框宽一点 安全 =,=
     dst_ptr[0] = cx - hw;
     dst_ptr[1] = cy - hh;
     dst_ptr[2] = cx + hw;
@@ -198,7 +198,7 @@ __global__ void get_object_kernel(int n,
       }
     }
 
-    if (with_lights) {
+    if (with_lights) { //刹车灯的概率和可视化程度
       dst_ptr[16] = sigmoid_gpu(brvis_data[loc_index]);
       dst_ptr[17] = sigmoid_gpu(brswt_data[loc_index]);
       dst_ptr[18] = sigmoid_gpu(ltvis_data[loc_index]);
@@ -224,7 +224,7 @@ __global__ void get_object_kernel(int n,
     if (with_ratios) {
       // 0~3: cos2, left, visa, visb
       auto vis_pred = visible_ratio_data + loc_index * 4;
-      auto vis_ptr = dst_ptr + 22;
+      auto vis_ptr = dst_ptr + 22;//对应到vis在dst_ptr中的位置
       vis_ptr[0] = vis_ptr[1] = vis_ptr[2] = vis_ptr[3] = 0;
       const float hi_th = 0.75;
       const float lo_th = 1.f - hi_th;
@@ -345,7 +345,7 @@ void compute_overlapped_by_idx_gpu(const int nthreads,
                                    const cudaStream_t &stream) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   const int thread_size = 512;
-  int block_size = (nthreads + thread_size - 1) / thread_size;
+  int block_size = (nthreads + thread_size - 1) / thread_size; //将nthrads个overlap分配到各个线程计算
   compute_overlapped_by_idx_kernel << < block_size, thread_size, 0, stream >>
       > (
           nthreads, bbox_data, bbox_step, overlap_threshold, idx, num_idx,
@@ -364,8 +364,8 @@ void apply_nms_gpu(const float *bbox_data,
                    base::Blob<int> *idx_sm,
                    const cudaStream_t &stream) {
   // Keep part of detections whose scores are higher than confidence threshold.
-  std::vector<int> idx;
-  std::vector<float> confidences;
+  std::vector<int> idx;//存储大于thresh的框的索引
+  std::vector<float> confidences; //存储大于thresh的candidate的置信度
   for (auto i : origin_indices) {
     if (conf_data[i] > confidence_threshold) {
       idx.push_back(i);
@@ -376,11 +376,11 @@ void apply_nms_gpu(const float *bbox_data,
   if (num_remain == 0) {
     return;
   }
-  // Sort detections based on score.
+  // Sort detections based on score. thrust GPU多线程运行
   thrust::sort_by_key(&confidences[0], &confidences[0] + num_remain, &idx[0],
                       thrust::greater<float>());
   if (top_k > -1 && top_k < num_remain) {
-    num_remain = top_k;
+    num_remain = top_k; //表示最多取前top_k个
   }
   int *idx_data = (idx_sm->mutable_cpu_data());
   std::copy(idx.begin(), idx.begin() + num_remain, idx_data);
@@ -535,7 +535,7 @@ void get_objects_gpu(const YoloBlobs &yolo_blobs,
   //TODO[KaWai]: use different stream to process scales in parallel.
   int num_candidates_offset = 0;
   for (int i = 0; i < num_candidates_vec.size(); i++){
-    int block_size = (num_candidates_vec[i] + thread_size - 1) / thread_size;
+    int block_size = (num_candidates_vec[i] + thread_size - 1) / thread_size; //将anchor分配到不同的thread分别处理
     const float *loc_data = loc_data_vec[i];
     const float *obj_data = obj_data_vec[i];
     const float *cls_data = cls_data_vec[i];
@@ -571,15 +571,15 @@ void get_objects_gpu(const YoloBlobs &yolo_blobs,
   const float *cpu_cls_data = yolo_blobs.res_cls_blob->cpu_data();
 
   std::vector<int> all_indices(all_scales_num_candidates);
-  std::iota(all_indices.begin(), all_indices.end(), 0);//begin 到　end 范围内元素依次累加1
-  std::vector<int> rest_indices;
+  std::iota(all_indices.begin(), all_indices.end(), 0);//begin 到　end 范围内元素依次累加1 此处为candidate box的序号
+  std::vector<int> rest_indices; //保留的candidate box
 
   std::map<base::ObjectSubType, std::vector<int>> indices;
   std::map<base::ObjectSubType, std::vector<float>> conf_scores;
 
   int top_k = idx_sm->count();
   int num_kept = 0;
-  // inter-cls NMS
+  // inter-cls NMS 类内NMS
   apply_nms_gpu(res_box_data,
                 cpu_cls_data + num_classes * all_scales_num_candidates,
                 all_indices,
