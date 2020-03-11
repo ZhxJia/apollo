@@ -96,6 +96,12 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/base/object.cc">
+			<Option target="yolo_detector_test"/>
+		</Unit>
+		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/base/object.h">
+			<Option target="yolo_detector_test"/>
+		</Unit>
 		<Unit filename="/home/jachin/space/apollo_hit/test/yolo_detector_test/base/object_types.h">
 			<Option target="yolo_detector_test"/>
 		</Unit>

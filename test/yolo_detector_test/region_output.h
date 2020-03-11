@@ -125,10 +125,11 @@ namespace apollo {
             constexpr int numScales = 3;
 
 //__host__ __device__ float sigmoid_gpu(float x);
-//__host__ __device__ float bbox_size_gpu(const float *bbox,
-//                                        const bool normalized);
-//__host__ __device__ float jaccard_overlap_gpu(const float *bbox1,
-//                                              const float *bbox2);
+            float bbox_size_gpu(const float *bbox,
+                                const bool normalized);
+
+            float jaccard_overlap_cpu(const float *bbox1,
+                                      const float *bbox2);
 
             template<typename T>
             bool sort_score_pair_descend(const std::pair<float, T> &pair1,
@@ -152,18 +153,20 @@ namespace apollo {
             void apply_nms(const bool *overlapped, const int num,
                            std::vector<int> *indices);
 
-//void apply_nms_gpu(const float *bbox_data, const float *conf_data,
-//                   const std::vector<int> &origin_indices, const int bbox_step,
-//                   const float confidence_threshold, const int top_k,
-//                   const float nms_threshold, std::vector<int> *indices,
-//                   caffe::Blob<bool> *overlapped, caffe::Blob<int> *idx_sm,
-//                   const cudaStream_t &_stream);
+            void apply_nms_cpu(const float *bbox_data, const float *conf_data,
+                               const std::vector<int> &origin_indices, const int bbox_step,
+                               const float confidence_threshold, const int top_k,
+                               const float nms_threshold, std::vector<int> *indices,
+                               caffe::Blob<float> *overlapped, caffe::Blob<float> *idx_sm
+            );
 
-//void compute_overlapped_by_idx_gpu(const int nthreads, const float *bbox_data,
-//                                   const float overlap_threshold,
-//                                   const int *idx, const int num_idx,
-//                                   bool *overlapped_data,
-//                                   const cudaStream_t &_stream);
+            void compute_overlapped_by_idx_cpu(const int nthreads,
+                                               const float *bbox_data,
+                                               const int bbox_step,
+                                               const float overlap_threshold,
+                                               const float *idx,
+                                               const int num_idx,
+                                               float *overlapped_data);
 
 //void get_objects_gpu(const YoloBlobs &yolo_blobs, const cudaStream_t &stream,
 //                     const std::vector<ObjectSubType> &types,
@@ -211,6 +214,45 @@ namespace apollo {
             const float *get_cpu_data(bool flag, const caffe::Blob<float> &blob);
 
             int get_area_id(float visible_ratios[4]);
+
+            void get_object_kernel(
+                    int n,
+                    const float *loc_data,
+                    const float *obj_data,
+                    const float *cls_data,
+                    const float *ori_data,
+                    const float *dim_data,
+                    const float *lof_data,
+                    const float *lor_data,
+                    const float *area_id_data,
+                    const float *visible_ratio_data,
+                    const float *cut_off_ratio_data,
+                    const float *brvis_data,
+                    const float *brswt_data,
+                    const float *ltvis_data,
+                    const float *ltswt_data,
+                    const float *rtvis_data,
+                    const float *rtswt_data,
+                    const float *anchor_data,
+                    const float *expand_data,
+                    int width,
+                    int height,
+                    int num_anchors,
+                    int num_classes,
+                    float confidence_threshold,
+                    float light_vis_conf_threshold,
+                    float light_swt_conf_threshold,
+                    bool with_box3d,
+                    bool with_frbox,
+                    bool with_lights,
+                    bool with_ratios,
+                    bool multi_scale,
+                    int num_areas,
+                    float *res_box_data,
+                    float *res_cls_data,
+                    int res_cls_offset,
+                    int all_scales_num_candidates
+            );
 
         }  // namespace camera
     }  // namespace perception

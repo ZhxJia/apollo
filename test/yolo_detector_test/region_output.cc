@@ -15,11 +15,83 @@
  *****************************************************************************/
 
 #include "region_output.h"
-
+#include <memory>
+#include "cyber/common/log.h"
+#include <functional>
+#include "boost/iterator/counting_iterator.hpp"
 
 namespace apollo {
     namespace perception {
         namespace camera {
+
+            typedef pair<int, float> PAIR;
+
+            bool _cmp_by_value(const PAIR &lhs, const PAIR &rhs) {
+                return lhs.second < rhs.second;
+            }
+
+            struct CmpByValue {
+                bool operator()(const PAIR &lhs, const PAIR &rhs) {
+                    return lhs.second < rhs.second;
+                }
+            };
+
+            template<typename K, typename V>
+            void sort_by_value(std::vector<K> &key, std::vector<V> &value) {
+                CHECK(key.size() == value.size());
+                std::map<K, V> k_v_map;
+                for (int i = 0; i < key.size(); ++i) {
+                    k_v_map.insert(make_pair(key[i], value[i]));
+                }
+                //将map中元素转存到vector中
+                std::vector<PAIR> key_val_vec(k_v_map.begin(), k_v_map.end());
+                std::sort(key_val_vec.begin(), key_val_vec.end(), CmpByValue());
+
+                for (int iter = 0; iter < key.size(); ++iter) {
+                    key[iter] = key_val_vec[iter].first;
+                    value[iter] = key_val_vec[iter].second;
+                }
+
+            }
+
+            float bbox_size_cpu(const float *bbox,
+                                const bool normalized) {
+                if (bbox[2] <= bbox[0] || bbox[3] <= bbox[1]) {
+                    // If bbox is invalid (e.g. xmax < xmin or ymax < ymin), return 0.
+                    return 0.f; // NOLINT
+                } else {
+                    const float width = bbox[2] - bbox[0];
+                    const float height = bbox[3] - bbox[1];
+                    if (normalized) {
+                        return width * height;
+                    } else {
+                        // If bbox is not within range [0, 1].
+                        return (width + 1) * (height + 1);
+                    }
+                }
+            }
+
+            float jaccard_overlap_cpu(const float *bbox1,
+                                      const float *bbox2) {
+                if (bbox2[0] > bbox1[2] || bbox2[2] < bbox1[0] ||
+                    bbox2[1] > bbox1[3] || bbox2[3] < bbox1[1]) {
+                    return float(0.); // NOLINT
+                } else {
+                    const float inter_xmin = std::max(bbox1[0], bbox2[0]);
+                    const float inter_ymin = std::max(bbox1[1], bbox2[1]);
+                    const float inter_xmax = std::min(bbox1[2], bbox2[2]);
+                    const float inter_ymax = std::min(bbox1[3], bbox2[3]);
+
+                    const float inter_width = inter_xmax - inter_xmin;
+                    const float inter_height = inter_ymax - inter_ymin;
+                    const float inter_size = inter_width * inter_height;
+
+                    const float bbox1_size = bbox_size_cpu(bbox1, true);
+                    const float bbox2_size = bbox_size_cpu(bbox2, true);
+
+                    return inter_size / (bbox1_size + bbox2_size - inter_size);
+                }
+            }
 
             void get_intersect_bbox(const NormalizedBBox &bbox1,
                                     const NormalizedBBox &bbox2,
@@ -259,9 +331,9 @@ namespace apollo {
                     }
                     ++total_obj_idx;
                 }
-//  AINFO << valid_obj_idx << " of " << total_obj_idx << " obstacles kept";
+                AINFO << valid_obj_idx << " of " << total_obj_idx << " obstacles kept";
                 objects->resize(valid_obj_idx);
-//  AINFO << "Number of detected obstacles: " << objects->size();
+                AINFO << "Number of detected obstacles: " << objects->size();
             }
 
             void recover_bbox(int roi_w, int roi_h, int offset_y,
@@ -413,8 +485,343 @@ namespace apollo {
                 return area_id;
             }
 
+            void apply_nms(const bool *overlapped,
+                           const int num,
+                           std::vector<int> *indices) {
+                std::vector<int> index_vec(boost::counting_iterator<int>(0),
+                                           boost::counting_iterator<int>(num));
+                // Do nms.
+                indices->clear();
+                while (index_vec.size() != 0) {
+                    // Get the current highest score box.
+                    int best_idx = index_vec.front();
+                    indices->push_back(best_idx);
+                    // Erase the best box.
+                    index_vec.erase(index_vec.begin());
+
+                    for (std::vector<int>::iterator it = index_vec.begin();
+                         it != index_vec.end();) {
+                        int cur_idx = *it;
+
+                        // Remove it if necessary
+                        if (overlapped[best_idx * num + cur_idx]) {
+                            it = index_vec.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                }
+            }
             const float *get_cpu_data(bool flag, const caffe::Blob<float> &blob) {
                 return flag ? blob.cpu_data() : nullptr;
+            }
+
+
+            void get_object_kernel(
+                    int n,
+                    const float *loc_data,
+                    const float *obj_data,
+                    const float *cls_data,
+                    const float *ori_data,
+                    const float *dim_data,
+                    const float *lof_data,
+                    const float *lor_data,
+                    const float *area_id_data,
+                    const float *visible_ratio_data,
+                    const float *cut_off_ratio_data,
+                    const float *brvis_data,
+                    const float *brswt_data,
+                    const float *ltvis_data,
+                    const float *ltswt_data,
+                    const float *rtvis_data,
+                    const float *rtswt_data,
+                    const float *anchor_data,
+                    const float *expand_data,
+                    int width,
+                    int height,
+                    int num_anchors,
+                    int num_classes,
+                    float confidence_threshold,
+                    float light_vis_conf_threshold,
+                    float light_swt_conf_threshold,
+                    bool with_box3d,
+                    bool with_frbox,
+                    bool with_lights,
+                    bool with_ratios,
+                    bool multi_scale,
+                    int num_areas,
+                    float *res_box_data,
+                    float *res_cls_data,
+                    int res_cls_offset,
+                    int all_scales_num_candidates
+            ) {
+                //loop candidate box
+                for (int i = 0; i < (n); ++i) {
+
+                    int box_block = kBoxBlockSize;
+                    int idx = i;
+                    int c = idx % num_anchors;
+                    idx = idx / num_anchors;
+                    int w = idx % width;
+                    idx = idx / width;
+                    int h = idx;
+                    int loc_index = (h * width + w) * num_anchors + c;//anchor index :0-51839
+                    //AINFO << "loc_index = " << loc_index;
+                    int offset_loc = loc_index * 4;
+                    int offset_cls = loc_index * num_classes;
+                    float scale = obj_data[loc_index];
+                    float cx =
+                            (w + sigmoid<float>(loc_data[offset_loc + 0])) / width; //c_x = sigmoid(t_x) + w  w,h为网格位置
+                    float cy = (h + sigmoid<float>(loc_data[offset_loc + 1])) / height; //c_y = sigmoid(t_y) + h
+                    float hw = exp(std::max(minExpPower, std::min(loc_data[offset_loc + 2], maxExpPower))) *
+                               anchor_data[2 * c] / width * 0.5; //box_w = anchor_w * exp(t_w)
+                    float hh = exp(std::max(minExpPower, std::min(loc_data[offset_loc + 3], maxExpPower))) *
+                               anchor_data[2 * c + 1] / height * 0.5; //box_h = anchor_h * exp(t_h)
+                    float max_prob = 0.f;
+                    int max_index = 0;
+                    for (int k = 0; k < num_classes; ++k) {
+                        float prob = cls_data[offset_cls + k] * scale;
+                        res_cls_data[k * all_scales_num_candidates + res_cls_offset + i] = prob;
+                        if (prob > max_prob) {
+                            max_prob = prob;
+                            max_index = k;
+                        }
+                    } // find max_prob
+
+                    res_cls_data[num_classes * all_scales_num_candidates + res_cls_offset + i] = max_prob;
+
+                    auto &&dst_ptr = res_box_data + i * box_block; //右值引用，对象是临时的,要求=右边必须是右值
+                    hw += expand_data[max_index]; //根据该box概率最大的类别的expand扩充hw
+                    dst_ptr[0] = cx - hw;
+                    dst_ptr[1] = cy - hh;
+                    dst_ptr[2] = cx + hw;
+                    dst_ptr[3] = cy + hh;
+
+                    if (with_box3d) {
+                        int offset_ori = loc_index * 2;
+                        dst_ptr[4] = atan2(ori_data[offset_ori + 1], ori_data[offset_ori]);
+
+                        int offset_dim = loc_index * 3;
+                        if (multi_scale) {
+                            offset_dim = loc_index * num_classes * 3 + max_index * 3;
+                        }
+                        dst_ptr[5] = dim_data[offset_dim + 0];
+                        dst_ptr[6] = dim_data[offset_dim + 1];
+                        dst_ptr[7] = dim_data[offset_dim + 2];
+
+                    }
+
+                    if (with_frbox) {
+                        {
+                            int offset_lof = loc_index * 4;
+                            auto &&src_ptr = lof_data + offset_lof;
+                            auto sb_x = src_ptr[0] * hw * 2 + cx;
+                            auto sb_y = src_ptr[1] * hh * 2 + cy;
+                            auto sb_hw = exp(src_ptr[2]) * hw;
+                            auto sb_hh = exp(src_ptr[3]) * hh;
+
+                            dst_ptr[8] = sb_x - sb_hw;
+                            dst_ptr[9] = sb_y - sb_hh;
+                            dst_ptr[10] = sb_x + sb_hw;
+                            dst_ptr[11] = sb_y + sb_hh;
+                        }
+                        {
+                            int offset_lor = loc_index * 4;
+                            auto &&src_ptr = lor_data + offset_lor;
+                            auto sb_x = src_ptr[0] * hw * 2 + cx;
+                            auto sb_y = src_ptr[1] * hh * 2 + cy;
+                            auto sb_hw = exp(src_ptr[2]) * hw;
+                            auto sb_hh = exp(src_ptr[3]) * hh;
+                            dst_ptr[12] = sb_x - sb_hw;
+                            dst_ptr[13] = sb_y - sb_hh;
+                            dst_ptr[14] = sb_x + sb_hw;
+                            dst_ptr[15] = sb_y + sb_hh;
+
+                        }
+
+                    }
+
+                    if (with_lights) {
+                        dst_ptr[16] = sigmoid(brvis_data[loc_index]);
+                        dst_ptr[17] = sigmoid(brswt_data[loc_index]);
+                        dst_ptr[18] = sigmoid(ltvis_data[loc_index]);
+                        dst_ptr[19] = sigmoid(ltswt_data[loc_index]);
+                        dst_ptr[20] = sigmoid(rtvis_data[loc_index]);
+                        dst_ptr[21] = sigmoid(rtswt_data[loc_index]);
+
+                        dst_ptr[16] = dst_ptr[16] > light_vis_conf_threshold ? dst_ptr[16] : 0;
+                        dst_ptr[18] = dst_ptr[18] > light_vis_conf_threshold ? dst_ptr[18] : 0;
+                        dst_ptr[20] = dst_ptr[20] > light_vis_conf_threshold ? dst_ptr[20] : 0;
+
+                        float swt_score = 0;
+                        swt_score = dst_ptr[16] * dst_ptr[17];
+                        dst_ptr[17] = swt_score > light_swt_conf_threshold ? swt_score : 0;
+
+                        swt_score = dst_ptr[18] * dst_ptr[19];
+                        dst_ptr[19] = swt_score > light_swt_conf_threshold ? swt_score : 0;
+
+                        swt_score = dst_ptr[20] * dst_ptr[21];
+                        dst_ptr[21] = swt_score > light_swt_conf_threshold ? swt_score : 0;
+                    }
+
+                    if (with_ratios) {
+                        // 0~3: cos2, left, visa, visb
+                        auto vis_pred = visible_ratio_data + loc_index * 4;
+                        auto vis_ptr = dst_ptr + 22;//对应到vis在dst_ptr中的位置
+                        vis_ptr[0] = vis_ptr[1] = vis_ptr[2] = vis_ptr[3] = 0;
+                        const float hi_th = 0.75;
+                        const float lo_th = 1.f - hi_th;
+                        if (vis_pred[2] >= hi_th && vis_pred[3] >= hi_th) {         // 2 (1, 3)
+                            vis_ptr[0] = vis_pred[0];
+                            vis_ptr[1] = 1 - vis_pred[0];
+                        } else if (vis_pred[2] <= lo_th && vis_pred[3] >= hi_th) {  // 4 (3, 5)
+                            vis_ptr[2] = vis_pred[0];
+                            vis_ptr[1] = 1 - vis_pred[0];
+                        } else if (vis_pred[2] <= lo_th && vis_pred[3] <= lo_th) {  // 6 (5, 7)
+                            vis_ptr[2] = vis_pred[0];
+                            vis_ptr[3] = 1 - vis_pred[0];
+                        } else if (vis_pred[2] >= hi_th && vis_pred[3] <= lo_th) {  // 8 (7, 1)
+                            vis_ptr[0] = vis_pred[0];
+                            vis_ptr[3] = 1 - vis_pred[0];
+                        } else {
+                            vis_ptr[2] = vis_pred[0];
+                            if (vis_pred[1] > 0.5) {
+                                vis_ptr[1] = 1 - vis_pred[0];
+                            } else {
+                                vis_ptr[3] = 1 - vis_pred[0];
+                            }
+                        }
+
+                        int offset_cut = loc_index * 4;
+                        dst_ptr[26] = cut_off_ratio_data[offset_cut + 0];
+                        dst_ptr[27] = cut_off_ratio_data[offset_cut + 1];
+                        dst_ptr[28] = cut_off_ratio_data[offset_cut + 2];
+                        dst_ptr[29] = cut_off_ratio_data[offset_cut + 3];
+
+                    }
+
+                    if (num_areas > 0) {
+                        int offset_area_id = loc_index * num_areas;
+                        int max_area_id = 0;
+                        for (int area_id = 1; area_id < num_areas; ++area_id) {
+                            if (area_id_data[offset_area_id + area_id] >
+                                area_id_data[offset_area_id + max_area_id]) {
+                                max_area_id = area_id;
+                            }
+                        }
+                        dst_ptr[30] = max_area_id + 1;
+                        dst_ptr[31] = area_id_data[offset_area_id + max_area_id];
+                    }
+
+
+                }
+
+
+            }
+
+
+            void sort_by_key() {
+                typedef pair<int, float> PAIR;
+            }
+
+
+            void compute_overlapped_by_idx_kernel(
+                    const int nthreads,
+                    const float *bbox_data,
+                    const int bbox_step,
+                    const float overlap_threshold,
+                    const float *idx,
+                    const int num_idx,
+                    float *overlapped_data) {
+                for (int index = 0; index < (nthreads); ++index) {
+                    const int j = index % num_idx;
+                    const int i = index / num_idx;
+
+                    if (i == j) {
+                        //Ignore same bbox.
+                        continue;
+                    }
+                    //Compute overlap between i-th bbox and j-th bbox.
+                    const int start_loc_i = idx[i] * bbox_step;
+                    const int start_loc_j = idx[j] * bbox_step;
+                    const float overlap = jaccard_overlap_cpu(bbox_data + start_loc_i,
+                                                              bbox_data + start_loc_j);
+                    overlapped_data[index] = overlap > overlap_threshold;
+
+                }
+
+
+            }
+
+            void compute_overlapped_by_idx_cpu(const int nthreads,
+                                               const float *bbox_data,
+                                               const int bbox_step,
+                                               const float overlap_threshold,
+                                               const float *idx,
+                                               const int num_idx,
+                                               float *overlapped_data) {
+
+                compute_overlapped_by_idx_kernel(nthreads, bbox_data, bbox_step, overlap_threshold, idx, num_idx,
+                                                 overlapped_data);
+
+            }
+
+            void apply_nms_cpu(const float *bbox_data,
+                               const float *conf_data,
+                               const std::vector<int> &origin_indices,
+                               const int bbox_step,
+                               const float confidence_threshold,
+                               const int top_k,
+                               const float nms_threshold,
+                               std::vector<int> *indices,
+                               caffe::Blob<float> *overlapped,
+                               caffe::Blob<float> *idx_sm
+            ) {
+                // Keep part of detections whose scores are higher than confidence threshold.
+                std::vector<int> idx; //存储大于thresh的框的索引
+                std::vector<float> confidences;//存储大于thresh的candidate的置信度
+                for (auto i : origin_indices) {
+                    if (conf_data[i] > confidence_threshold) {
+                        idx.push_back(i);
+                        confidences.push_back(conf_data[i]);
+                    }
+                }
+                int num_remain = confidences.size();
+                if (num_remain == 0) {
+                    return;
+                }
+                for (int i = 0; i < num_remain; i++)
+                    AINFO << "confidences: " << confidences[i] << "  anchor_idx: " << idx[i];
+                sort_by_value<int, float>(idx, confidences);
+//                for (int i = 0; i < num_remain; i++)
+//                    AINFO << "_confidences: " << confidences[i] << "  _anchor_idx: " << idx[i];
+
+                if (top_k > -1 && top_k < num_remain) {
+                    num_remain = top_k; //最多取前top_k个
+                }
+                float *idx_data = (idx_sm->mutable_cpu_data());
+                std::copy(idx.begin(), idx.begin() + num_remain, idx_data);
+
+                overlapped->Reshape(std::vector<int>{num_remain, num_remain});
+                float *overlapped_data = (overlapped->mutable_cpu_data());
+
+                compute_overlapped_by_idx_cpu(overlapped->count(),
+                                              bbox_data,
+                                              bbox_step,
+                                              nms_threshold,
+                                              idx_sm->cpu_data(),
+                                              num_remain,
+                                              overlapped_data);
+                //Do non-maximum suppression based on overlapped results.
+                const bool *overlapped_results = (const bool*) overlapped->cpu_data();
+                std::vector<int> selected_indices;
+
+                apply_nms(overlapped_results,num_remain, & selected_indices);
+                //Put back the selected information
+                for(size_t i= 0;i<selected_indices.size();++i){
+                    indices->push_back(idx[selected_indices[i]]);
+                }
+
             }
 
 

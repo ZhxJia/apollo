@@ -17,7 +17,7 @@
 
 #include <map>
 
-#include "modules/perception/base/object.h"
+#include "base/object.h"
 
 namespace apollo {
 namespace perception {

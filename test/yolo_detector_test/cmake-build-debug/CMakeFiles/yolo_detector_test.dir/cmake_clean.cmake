@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/yolo_detector_test.dir/base/object.cc.o"
   "CMakeFiles/yolo_detector_test.dir/common/util.cc.o"
   "CMakeFiles/yolo_detector_test.dir/cyber/common/file.cc.o"
   "CMakeFiles/yolo_detector_test.dir/detector.cpp.o"

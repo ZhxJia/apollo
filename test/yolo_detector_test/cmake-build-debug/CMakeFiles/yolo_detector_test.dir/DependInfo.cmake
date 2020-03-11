@@ -4,6 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
+  "/home/jachin/space/apollo_hit/test/yolo_detector_test/base/object.cc" "/home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/base/object.cc.o"
   "/home/jachin/space/apollo_hit/test/yolo_detector_test/common/util.cc" "/home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/common/util.cc.o"
   "/home/jachin/space/apollo_hit/test/yolo_detector_test/cyber/common/file.cc" "/home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/cyber/common/file.cc.o"
   "/home/jachin/space/apollo_hit/test/yolo_detector_test/detector.cpp" "/home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/detector.cpp.o"

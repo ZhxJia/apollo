@@ -15,7 +15,7 @@
  *****************************************************************************/
 #pragma once
 
-#include "../base/object_types.h"
+#include "base/object_types.h"
 
 namespace apollo {
 namespace perception {

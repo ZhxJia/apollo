@@ -76,7 +76,7 @@ namespace apollo {
                 std::vector<float> expands_;
 
                 //load shape
-                int height_ = 800;
+                int height_ = 576;
                 int width_ = 1440;
                 int offset_y_ = 0;
 
