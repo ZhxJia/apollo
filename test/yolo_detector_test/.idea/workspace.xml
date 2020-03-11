@@ -11,33 +11,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="64ba7054-de54-4fdd-854b-59856346e5cb" name="Default Changelist" comment="update for nms">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/CXX.includecache" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/CXX.includecache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/DependInfo.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/DependInfo.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/build.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/build.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/cmake_clean.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/cmake_clean.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/depend.internal" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/depend.internal" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/depend.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/depend.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/inference/caffe/caffe_net.cc.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/inference/caffe/caffe_net.cc.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/link.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/link.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/progress.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/progress.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/region_output.cc.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/region_output.cc.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/yolo_net.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/yolo_detector_test.dir/yolo_net.cpp.o" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/yolo_detector_test" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/yolo_detector_test" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/yolo_detector_test.cbp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/yolo_detector_test.cbp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common/math_functions.h" beforeDir="false" afterPath="$PROJECT_DIR$/common/math_functions.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inference/caffe/caffe_net.cc" beforeDir="false" afterPath="$PROJECT_DIR$/inference/caffe/caffe_net.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/object_maintainer.h" beforeDir="false" afterPath="$PROJECT_DIR$/object_maintainer.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/region_output.cc" beforeDir="false" afterPath="$PROJECT_DIR$/region_output.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/region_output.h" beforeDir="false" afterPath="$PROJECT_DIR$/region_output.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yolo_net.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/yolo_net.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yolo_net.h" beforeDir="false" afterPath="$PROJECT_DIR$/yolo_net.h" afterDir="false" />
-    </list>
+    <list default="true" id="64ba7054-de54-4fdd-854b-59856346e5cb" name="Default Changelist" comment="update for nms" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -98,7 +72,7 @@
       <workItem from="1583727886157" duration="40272000" />
       <workItem from="1583803093260" duration="237000" />
       <workItem from="1583803710435" duration="39453000" />
-      <workItem from="1583886935812" duration="40771000" />
+      <workItem from="1583886935812" duration="40875000" />
     </task>
     <servers />
   </component>
@@ -120,34 +94,34 @@
     </state>
     <state x="623" y="282" width="424" height="484" key="FileChooserDialogImpl/1680.282.1366.768/0.309.1680.741@0.309.1680.741" timestamp="1583823223713" />
     <state x="2187" y="309" width="379" height="502" key="FileChooserDialogImpl/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583930310733" />
-    <state width="1261" height="346" key="GridCell.Tab.0.bottom" timestamp="1583940494880">
+    <state width="1261" height="346" key="GridCell.Tab.0.bottom" timestamp="1583940699106">
       <screen x="1680" y="282" width="1366" height="768" />
     </state>
     <state width="1634" height="367" key="GridCell.Tab.0.bottom/1680.0.1366.768/0.27.1680.1023@0.27.1680.1023" timestamp="1583772638705" />
     <state width="1261" height="170" key="GridCell.Tab.0.bottom/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583768239599" />
     <state width="1634" height="117" key="GridCell.Tab.0.bottom/1680.282.1366.768/0.309.1680.741@0.309.1680.741" timestamp="1583930571267" />
-    <state width="1261" height="346" key="GridCell.Tab.0.bottom/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940494880" />
-    <state width="1261" height="346" key="GridCell.Tab.0.center" timestamp="1583940494880">
+    <state width="1261" height="346" key="GridCell.Tab.0.bottom/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940699106" />
+    <state width="1261" height="346" key="GridCell.Tab.0.center" timestamp="1583940699106">
       <screen x="1680" y="282" width="1366" height="768" />
     </state>
     <state width="1634" height="367" key="GridCell.Tab.0.center/1680.0.1366.768/0.27.1680.1023@0.27.1680.1023" timestamp="1583772638705" />
     <state width="1261" height="170" key="GridCell.Tab.0.center/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583768239599" />
     <state width="1634" height="117" key="GridCell.Tab.0.center/1680.282.1366.768/0.309.1680.741@0.309.1680.741" timestamp="1583930571267" />
-    <state width="1261" height="346" key="GridCell.Tab.0.center/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940494880" />
-    <state width="1261" height="346" key="GridCell.Tab.0.left" timestamp="1583940494880">
+    <state width="1261" height="346" key="GridCell.Tab.0.center/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940699106" />
+    <state width="1261" height="346" key="GridCell.Tab.0.left" timestamp="1583940699105">
       <screen x="1680" y="282" width="1366" height="768" />
     </state>
     <state width="1634" height="367" key="GridCell.Tab.0.left/1680.0.1366.768/0.27.1680.1023@0.27.1680.1023" timestamp="1583772638705" />
     <state width="1261" height="170" key="GridCell.Tab.0.left/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583768239598" />
     <state width="1634" height="117" key="GridCell.Tab.0.left/1680.282.1366.768/0.309.1680.741@0.309.1680.741" timestamp="1583930571267" />
-    <state width="1261" height="346" key="GridCell.Tab.0.left/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940494880" />
-    <state width="1261" height="346" key="GridCell.Tab.0.right" timestamp="1583940494880">
+    <state width="1261" height="346" key="GridCell.Tab.0.left/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940699105" />
+    <state width="1261" height="346" key="GridCell.Tab.0.right" timestamp="1583940699106">
       <screen x="1680" y="282" width="1366" height="768" />
     </state>
     <state width="1634" height="367" key="GridCell.Tab.0.right/1680.0.1366.768/0.27.1680.1023@0.27.1680.1023" timestamp="1583772638705" />
     <state width="1261" height="170" key="GridCell.Tab.0.right/1680.0.1366.768/0.27.1680.1023@1680.0.1366.768" timestamp="1583768239599" />
     <state width="1634" height="117" key="GridCell.Tab.0.right/1680.282.1366.768/0.309.1680.741@0.309.1680.741" timestamp="1583930571267" />
-    <state width="1261" height="346" key="GridCell.Tab.0.right/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940494880" />
+    <state width="1261" height="346" key="GridCell.Tab.0.right/1680.282.1366.768/0.309.1680.741@1680.282.1366.768" timestamp="1583940699106" />
     <state x="1948" y="320" width="1053" height="730" key="SettingsEditor" timestamp="1583910075281">
       <screen x="1680" y="282" width="1366" height="768" />
     </state>
