@@ -32,7 +32,10 @@ namespace apollo {
 
             struct CmpByValue {
                 bool operator()(const PAIR &lhs, const PAIR &rhs) {
-                    return lhs.second < rhs.second;
+                    if (lhs.second != rhs.second)
+                        return lhs.second > rhs.second;
+                    else
+                        return lhs.first > rhs.first;
                 }
             };
 
@@ -485,11 +488,13 @@ namespace apollo {
                 return area_id;
             }
 
-            void apply_nms(const bool *overlapped,
+            void apply_nms(const float *overlapped,
                            const int num,
                            std::vector<int> *indices) {
                 std::vector<int> index_vec(boost::counting_iterator<int>(0),
                                            boost::counting_iterator<int>(num));
+
+
                 // Do nms.
                 indices->clear();
                 while (index_vec.size() != 0) {
@@ -512,6 +517,7 @@ namespace apollo {
                     }
                 }
             }
+
             const float *get_cpu_data(bool flag, const caffe::Blob<float> &blob) {
                 return flag ? blob.cpu_data() : nullptr;
             }
@@ -742,12 +748,12 @@ namespace apollo {
                         continue;
                     }
                     //Compute overlap between i-th bbox and j-th bbox.
-                    const int start_loc_i = idx[i] * bbox_step;
-                    const int start_loc_j = idx[j] * bbox_step;
+                    const int start_loc_i = static_cast<int>(idx[i] * static_cast<float>(bbox_step));
+                    const int start_loc_j = static_cast<int>(idx[j] * static_cast<float>(bbox_step));
                     const float overlap = jaccard_overlap_cpu(bbox_data + start_loc_i,
                                                               bbox_data + start_loc_j);
-                    overlapped_data[index] = overlap > overlap_threshold;
-
+//                    AINFO << " i " << i << " j " << j << "    overlap:" << overlap <<"       with thresh" << overlap_threshold;
+                    overlapped_data[index] = static_cast<float>(overlap > overlap_threshold);
                 }
 
 
@@ -778,11 +784,11 @@ namespace apollo {
                                caffe::Blob<float> *idx_sm
             ) {
                 // Keep part of detections whose scores are higher than confidence threshold.
-                std::vector<int> idx; //存储大于thresh的框的索引
+                std::vector<float> idx; //存储大于thresh的框的索引
                 std::vector<float> confidences;//存储大于thresh的candidate的置信度
                 for (auto i : origin_indices) {
                     if (conf_data[i] > confidence_threshold) {
-                        idx.push_back(i);
+                        idx.push_back(static_cast<float>(i));
                         confidences.push_back(conf_data[i]);
                     }
                 }
@@ -792,15 +798,20 @@ namespace apollo {
                 }
 //                for (int i = 0; i < num_remain; i++)
 //                    AINFO << "confidences: " << confidences[i] << "  anchor_idx: " << idx[i];
-                sort_by_value<int, float>(idx, confidences);
-//                for (int i = 0; i < num_remain; i++)
-//                    AINFO << "_confidences: " << confidences[i] << "  _anchor_idx: " << idx[i];
-
+                sort_by_value<float, float>(idx, confidences);
+                for (int i = 0; i < num_remain; i++)
+                    AINFO << "_confidences" << i << ":" << confidences[i] << "  _anchor_idx: " << idx[i];
+                AINFO << "confidence_size:" << confidences.size();
                 if (top_k > -1 && top_k < num_remain) {
                     num_remain = top_k; //最多取前top_k个
                 }
                 float *idx_data = (idx_sm->mutable_cpu_data());
                 std::copy(idx.begin(), idx.begin() + num_remain, idx_data);
+//                AINFO << "num_remain = " << num_remain ;
+//                for (int i = 0;i<num_remain;++i)
+//                {
+//                    AINFO << "id"<<i<<": "<< idx[i] << "idx_sm: " << *(idx_data+i);
+//                }
 
                 overlapped->Reshape(std::vector<int>{num_remain, num_remain});
                 float *overlapped_data = (overlapped->mutable_cpu_data());
@@ -813,12 +824,12 @@ namespace apollo {
                                               num_remain,
                                               overlapped_data);
                 //Do non-maximum suppression based on overlapped results.
-                const bool *overlapped_results = (const bool*) overlapped->cpu_data();
+                const float *overlapped_results = (const float *) overlapped->cpu_data();
                 std::vector<int> selected_indices;
 
-                apply_nms(overlapped_results,num_remain, & selected_indices);
+                apply_nms(overlapped_results, num_remain, &selected_indices);
                 //Put back the selected information
-                for(size_t i= 0;i<selected_indices.size();++i){
+                for (size_t i = 0; i < selected_indices.size(); ++i) {
                     indices->push_back(idx[selected_indices[i]]);
                 }
 

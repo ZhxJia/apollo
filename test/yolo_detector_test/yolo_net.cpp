@@ -306,8 +306,9 @@ namespace apollo {
                 int width_step = input_blob->offset({0,1,0,0}) * static_cast<int>(sizeof(float));
 
                 for (int y = 0; y < img_f.rows; ++y) {
-                    memcpy((input_blob->mutable_cpu_data() +input_blob->offset({0,y,0,0})) ,img_f.ptr<float>(y),
-                            width_step);
+                    memcpy((input_blob->mutable_cpu_data() +input_blob->offset({0,y,0,0})),
+                            img_f.ptr<float>(y), //ptr(y)为第y行元素的行首指针
+                            width_step);//按行copy
                 }
 
             }
@@ -439,9 +440,6 @@ namespace apollo {
                 ///detection part
                 inference_->Infer();
 
-
-                for (int i = 0; i < 127; i++)
-                    AINFO << "out_blob_data:" << inference_->get_blob("cls_pred")->data_at(0, 35, 89, i);
                 get_objects_cpu(yolo_blobs_, types_, nms_, yolo_param_.model_param(),
                                 light_vis_conf_threshold_, light_swt_conf_threshold_,
                                 overlapped_.get(), idx_sm_.get(), &(detected_objects_));

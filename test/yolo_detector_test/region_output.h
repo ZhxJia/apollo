@@ -150,7 +150,7 @@ namespace apollo {
             float get_jaccard_overlap(const NormalizedBBox &bbox1,
                                       const NormalizedBBox &bbox2);
 
-            void apply_nms(const bool *overlapped, const int num,
+            void apply_nms(const float *overlapped, const int num,
                            std::vector<int> *indices);
 
             void apply_nms_cpu(const float *bbox_data, const float *conf_data,

@@ -82,7 +82,7 @@ namespace apollo {
 
             int main() {
 
-                const std::string image_name = "test4";
+                const std::string image_name = "test3";
                 //const std::string image_name = "empty.png";
                 const std::string image_path = "../test_img/" + image_name + ".jpg";
                 std::string result_path = "../output/" + image_name + ".txt";
