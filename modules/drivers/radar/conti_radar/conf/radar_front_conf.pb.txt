@@ -1,3 +1,4 @@
+#该文件通过CAN对毫米波雷达进行配置
 can_conf {
 
   can_card_parameter {

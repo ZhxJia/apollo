@@ -40,11 +40,11 @@ void YoloObstacleDetector::LoadInputShape(const yolo::ModelParam &model_param) {
   int image_width = static_cast<int>(base_camera_model_->get_width());
 
   offset_y_ =
-      static_cast<int>(offset_ratio * static_cast<float>(image_height) + .5f);
+      static_cast<int>(offset_ratio * static_cast<float>(image_height) + .5f);//312
   float roi_ratio = cropped_ratio * static_cast<float>(image_height) /
-                    static_cast<float>(image_width);
+                    static_cast<float>(image_width); 
   width_ = static_cast<int>(resized_width + aligned_pixel / 2) / aligned_pixel *
-           aligned_pixel;  // TO DO : Suspicious code
+           aligned_pixel;  // TO DO : Suspicious code 注意这里都是整数运算
   height_ = static_cast<int>(static_cast<float>(width_) * roi_ratio +
                              static_cast<float>(aligned_pixel) / 2.0f) /
             aligned_pixel * aligned_pixel;  // TO DO : Suspicious code

@@ -38,7 +38,7 @@ namespace onboard {
 using apollo::drivers::ContiRadar;
 using apollo::localization::LocalizationEstimate;
 
-class RadarDetectionComponent : public cyber::Component<ContiRadar> {
+class RadarDetectionComponent : public cyber::Component<ContiRadar> { //自动接收ContiRadar消息
  public:
   RadarDetectionComponent()
       : seq_num_(0),

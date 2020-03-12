@@ -37,8 +37,8 @@ __global__ void resize_linear_kernel(const unsigned char *src,
                      float fy) {
   const int dst_x = blockDim.x * blockIdx.x + threadIdx.x;//(block的数量dst_width/32) * (dst_height /8)
   const int dst_y = blockDim.y * blockIdx.y + threadIdx.y;//Id表示当前当前正在调用的线程数　线程总数(32*8=256)
-  if (dst_x < dst_width && dst_y < dst_height) {
-    float src_x = (dst_x + 0.5) * fx - 0.5;//fx = (origin_width) / (width);
+  if (dst_x < dst_width && dst_y < dst_height) {//遍历1440*576每个像素
+    float src_x = (dst_x + 0.5) * fx - 0.5; 
     float src_y = (dst_y + 0.5) * fy - 0.5;
     const int x1 = __float2int_rd(src_x);
     const int y1 = __float2int_rd(src_y);
@@ -47,7 +47,7 @@ __global__ void resize_linear_kernel(const unsigned char *src,
     const int x2 = x1 + 1;
     const int y2 = y1 + 1;
     const int x2_read = min(x2, width - 1);
-    const int y2_read = min(y2, height - 1);
+    const int y2_read = min(y2, height - 1); //原始图像中的索引
     int src_reg = 0;
     for (int c = 0; c < channel; c++) {
       float out = 0;
@@ -162,12 +162,12 @@ bool ResizeGPU(const base::Image8U &src,
                std::shared_ptr<apollo::perception::base::Blob<float> > dst,
                int stepwidth,
                int start_axis) {
-  int width = dst->shape(2);
-  int height = dst->shape(1);
-  int channel = dst->shape(3);
-  int origin_channel = src.channels();
-  int origin_height = src.rows();
-  int origin_width = src.cols();
+  int width = dst->shape(2);//1440
+  int height = dst->shape(1);//576
+  int channel = dst->shape(3);//3
+  int origin_channel = src.channels();//3
+  int origin_height = src.rows();//768
+  int origin_width = src.cols();//1920
 
   if (origin_channel != dst->shape(3)) {
     AERROR << "channel should be the same after resize.";
@@ -179,7 +179,7 @@ bool ResizeGPU(const base::Image8U &src,
 
   const dim3 grid(divup(width, block.x), divup(height, block.y));//block.x =32 grid(width/32,height/8)向上取整
 
-  resize_linear_kernel << < grid, block >> >
+  resize_linear_kernel << < grid, block >> > //45*75个block，每个block中有32*8个线程，每个线程处理1440*576中的一个像素
       (src.gpu_data(), dst->mutable_gpu_data(),
           origin_channel, origin_height, origin_width,
           stepwidth, height, width, fx, fy); //启动kernal
