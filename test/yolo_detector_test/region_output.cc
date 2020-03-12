@@ -790,8 +790,8 @@ namespace apollo {
                 if (num_remain == 0) {
                     return;
                 }
-                for (int i = 0; i < num_remain; i++)
-                    AINFO << "confidences: " << confidences[i] << "  anchor_idx: " << idx[i];
+//                for (int i = 0; i < num_remain; i++)
+//                    AINFO << "confidences: " << confidences[i] << "  anchor_idx: " << idx[i];
                 sort_by_value<int, float>(idx, confidences);
 //                for (int i = 0; i < num_remain; i++)
 //                    AINFO << "_confidences: " << confidences[i] << "  _anchor_idx: " << idx[i];

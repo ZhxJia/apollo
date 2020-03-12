@@ -9,6 +9,7 @@
 #include "object_maintainer.h"
 #include "base/object_types.h"
 #include "base/object.h"
+
 namespace apollo {
     namespace perception {
         namespace camera {
@@ -138,7 +139,7 @@ namespace apollo {
 
                     const int width = width_vec[0];
                     const int height = height_vec[0];
-                    AINFO << "obj_width: " << width << " obj_height: " << height;
+
 
                     get_object_kernel(num_candidates_vec[0], loc_data, obj_data, cls_data, ori_data,
                                       dim_data, lof_data, lor_data, area_id_data, visible_ratio_data,
@@ -261,52 +262,54 @@ namespace apollo {
 
 
             }
-
+            //input_blob是nhwc格式而原blob是nchw格式此处存在问题
             void YoloObstacleDetector::WrapInputLayer(std::vector<cv::Mat> *input_channels) {
                 auto input_blob = inference_->get_blob(yolo_param_.net_param().input_blob());
+                //input_blob->Reshape(std::vector<int>{1,3,576,1440});
                 int width = input_blob->shape(2);
                 int height = input_blob->shape(1);
+                int c = input_blob->shape(3);
                 float *input_data = input_blob->mutable_cpu_data();
-
-                for (int i = 0; i < input_blob->shape(3); ++i) {
+                // n* h*w*c
+                for (int i = 0; i < c; ++i) {
                     cv::Mat channel(height, width, CV_32FC1, input_data);
                     input_channels->push_back(channel);
-                    input_data += width * height;
+                    input_data += height * width;
                 }
+                AINFO << "input_channel_size: " << input_channels->size();
 
             }
 
             void YoloObstacleDetector::Preprocess(const cv::Mat &img, std::vector<cv::Mat> *input_channels) {
 
-                cv::Mat sample_resized;
+                cv::Mat img_resized;
+                auto crop_roi = cv::Rect(0, offset_y_,
+                                         static_cast<int>(src_width_), static_cast<int>(src_height_) - offset_y_);
+                //do crop
+                auto img_crop = img(crop_roi);
 
-                if (img.size() != input_geometry_) {
-                    cv::resize(img, sample_resized, input_geometry_);
+                if (img_crop.size() != input_geometry_) {
+                    cv::resize(img_crop, img_resized, input_geometry_, cv::INTER_LINEAR);
                 } else {
-                    sample_resized = img;
+                    img_resized = img_crop;
                 }
-//                AINFO << "size:" << width_;
-                cv::Mat sample_sign;
-                sample_resized.convertTo(sample_sign, CV_32SC3);
-                cv::Mat mean_ = cv::Mat(input_geometry_, CV_32SC3, cv::Scalar(95, 99, 96));
 
-                cv::Mat sample_normalized;
-                cv::subtract(sample_sign, mean_, sample_normalized);
 
-                cv::Mat sample_float;
-                sample_normalized.convertTo(sample_float, CV_32FC3);
-                //sample_resized.convertTo(sample_float, CV_32FC3);
-                cv::split(sample_float, *input_channels);
-//                cv::imshow("s",sample_float);
+                cv::Mat img_f;
+                img_resized.convertTo(img_f, CV_32FC3);
+
+//                cv::imshow("input", img_f);
 //                cv::waitKey(0);
-
 
                 auto input_blob = inference_->get_blob(yolo_param_.net_param().input_blob());
 
-//                AINFO << "input channels：" << reinterpret_cast<float*>(input_channels->at(0).data) << "  blob:" <<input_blob->cpu_data();
-                CHECK(reinterpret_cast<float *>(input_channels->at(0).data)
-                      == input_blob->cpu_data())
-                << "Input channels are not wrapping the input layer of the network.";
+                int width_step = input_blob->offset({0,1,0,0}) * static_cast<int>(sizeof(float));
+
+                for (int y = 0; y < img_f.rows; ++y) {
+                    memcpy((input_blob->mutable_cpu_data() +input_blob->offset({0,y,0,0})) ,img_f.ptr<float>(y),
+                            width_step);
+                }
+
             }
 
             void YoloObstacleDetector::LoadInputShape(
@@ -325,6 +328,8 @@ namespace apollo {
                                   static_cast<float>(image_width);
                 width_ = static_cast<int>(resized_width + aligned_pixel / 2) / aligned_pixel *
                          aligned_pixel;  // TO DO : Suspicious code
+                AINFO << "width_:" << resized_width << " aligned_pixel: " << aligned_pixel;
+
                 height_ = static_cast<int>(static_cast<float>(width_) * roi_ratio +
                                            static_cast<float>(aligned_pixel) / 2.0f) /
                           aligned_pixel * aligned_pixel;  // TO DO : Suspicious code
@@ -425,7 +430,7 @@ namespace apollo {
                 AINFO << "input_blob_shape=" << "[" << input_blob->shape(0) << "," << input_blob->shape(1)
                       << "," << input_blob->shape(2) << "," << input_blob->shape(3) << "]";
 
-                WrapInputLayer(&input_channels);
+                //WrapInputLayer(&input_channels);
 
                 Preprocess(img, &input_channels);
 
@@ -435,21 +440,25 @@ namespace apollo {
                 inference_->Infer();
 
 
-//                for (int i = 0; i < 127; i++)
-//                    AINFO << "out_blob_data:" << inference_->get_blob("cls_pred")->data_at(0, 35, 89, i);
+                for (int i = 0; i < 127; i++)
+                    AINFO << "out_blob_data:" << inference_->get_blob("cls_pred")->data_at(0, 35, 89, i);
                 get_objects_cpu(yolo_blobs_, types_, nms_, yolo_param_.model_param(),
                                 light_vis_conf_threshold_, light_swt_conf_threshold_,
                                 overlapped_.get(), idx_sm_.get(), &(detected_objects_));
 
-                filter_bbox(min_dims_,&(detected_objects_));
+                filter_bbox(min_dims_, &(detected_objects_));
 
-                for(auto det_obj :detected_objects_)
-                {
+                for (auto det_obj :detected_objects_) {
                     AINFO << "det_obj_type: " << base::kSubType2NameMap.at(det_obj->sub_type);
                 }
 
+                //recover box to image
+                recover_bbox(src_width_, src_height_ - offset_y_, offset_y_, &(detected_objects_));
+
+                //post processing
 
 
+                return true;
             }
 
             bool YoloObstacleDetector::InitNet(const yolo::YoloParam &yolo_param) {

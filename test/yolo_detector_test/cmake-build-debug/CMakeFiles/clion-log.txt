@@ -3,6 +3,9 @@ find Protobuf:/usr/local/include
 find glog:/usr/local/lib/libglog.a
 find gflag:/usr/lib/x86_64-linux-gnu/libgflags.so
 version:
+-- Found GTest: /usr/local/lib/libgtest.a  
+gtest_include_dir=/usr/include
+gtest_library=/usr/local/lib/libgtest.a
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /home/jachin/space/apollo_hit/test/yolo_detector_test/cmake-build-debug

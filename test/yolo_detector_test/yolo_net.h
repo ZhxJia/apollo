@@ -52,6 +52,9 @@ namespace apollo {
 
                 bool Load();
 
+                //detected_objects
+                std::vector<base::ObjectPtr> detected_objects_;
+
             protected:
 
                 void LoadInputShape(const yolo::ModelParam &model_param);
@@ -64,6 +67,7 @@ namespace apollo {
 
 
                 std::shared_ptr<caffe::Net<float>> net_ = nullptr;
+
 
             private:
                 std::string proto_file_;
@@ -79,6 +83,9 @@ namespace apollo {
                 int height_ = 576;
                 int width_ = 1440;
                 int offset_y_ = 0;
+                int src_height_ = 1080;
+                int src_width_ = 1920;
+
 
                 //load param
                 int ori_cycle_ = 1;
@@ -101,8 +108,7 @@ namespace apollo {
 
                 //input shape
                 cv::Size input_geometry_ = cv::Size(1440, 576);
-                //detected_objects
-                std::vector<base::ObjectPtr> detected_objects_;
+
 
             };
 

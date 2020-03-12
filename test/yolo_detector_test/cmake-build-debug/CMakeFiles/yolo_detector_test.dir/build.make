@@ -205,6 +205,7 @@ yolo_detector_test: /usr/lib/x86_64-linux-gnu/libboost_filesystem.so
 yolo_detector_test: /usr/local/lib/libprotobuf.so
 yolo_detector_test: /usr/local/lib/libglog.so
 yolo_detector_test: /usr/lib/x86_64-linux-gnu/libgflags.so
+yolo_detector_test: /usr/local/lib/libgtest.a
 yolo_detector_test: /usr/local/opencv4/lib/libopencv_dnn.so.4.2.0
 yolo_detector_test: /usr/local/opencv4/lib/libopencv_highgui.so.4.2.0
 yolo_detector_test: /usr/local/opencv4/lib/libopencv_ml.so.4.2.0

@@ -55,6 +55,12 @@ target_link_libraries(yolo_detector_test ${GFLAGS_LIBRARIES})
 message("find gflag:${GFLAGS_LIBRARIES}")
 message("version:${GFLAGS_VERSION}")
 
+#locate gtest
+find_package(GTest MODULE REQUIRED)
+include_directories(${GTEST_INCLUDE_DIR})
+target_link_libraries(yolo_detector_test ${GTEST_LIBRARY})
+message(gtest_include_dir=${GTEST_INCLUDE_DIR})
+message(gtest_library=${GTEST_LIBRARY})
 
 #locate opencv
 find_package(OpenCV REQUIRED)

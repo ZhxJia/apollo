@@ -367,6 +367,8 @@ CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../base/point.h
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../base/vehicle_struct.h
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../common/math_functions.h
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../common/util.h
+CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../cyber/common/binary.h
+CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../cyber/common/log.h
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../detector.cpp
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../detector.h
 CMakeFiles/yolo_detector_test.dir/detector.cpp.o: ../inference/inference.h

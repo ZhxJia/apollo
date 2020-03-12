@@ -262,6 +262,21 @@ GLOG_LIBRARY:FILEPATH=/usr/local/lib/libglog.a
 //Folder contains Google glog
 GLOG_ROOT_DIR:PATH=
 
+//Path to a file.
+GTEST_INCLUDE_DIR:PATH=/usr/include
+
+//Path to a library.
+GTEST_LIBRARY:FILEPATH=/usr/local/lib/libgtest.a
+
+//Path to a library.
+GTEST_LIBRARY_DEBUG:FILEPATH=GTEST_LIBRARY_DEBUG-NOTFOUND
+
+//Path to a library.
+GTEST_MAIN_LIBRARY:FILEPATH=/usr/local/lib/libgtest_main.a
+
+//Path to a library.
+GTEST_MAIN_LIBRARY_DEBUG:FILEPATH=GTEST_MAIN_LIBRARY_DEBUG-NOTFOUND
+
 //The directory containing a CMake configuration file for Gflag.
 Gflag_DIR:PATH=Gflag_DIR-NOTFOUND
 
@@ -505,10 +520,22 @@ FIND_PACKAGE_MESSAGE_DETAILS_Boost:INTERNAL=[/usr/include][cfound components:  s
 FIND_PACKAGE_MESSAGE_DETAILS_GFLAGS:INTERNAL=[/usr/include][/usr/lib/x86_64-linux-gnu/libgflags.so][v()]
 //Details about finding GLOG
 FIND_PACKAGE_MESSAGE_DETAILS_GLOG:INTERNAL=[/usr/local/include][/usr/local/lib/libglog.a][v()]
+//Details about finding GTest
+FIND_PACKAGE_MESSAGE_DETAILS_GTest:INTERNAL=[/usr/local/lib/libgtest.a][/usr/include][/usr/local/lib/libgtest_main.a][v()]
 //Details about finding OpenCV
 FIND_PACKAGE_MESSAGE_DETAILS_OpenCV:INTERNAL=[/usr/local/opencv4][v4.2.0()]
 //Details about finding Protobuf
 FIND_PACKAGE_MESSAGE_DETAILS_Protobuf:INTERNAL=[/usr/local/lib/libprotobuf.so;-lpthread][/usr/local/include][v2.6.0()]
+//ADVANCED property for variable: GTEST_INCLUDE_DIR
+GTEST_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: GTEST_LIBRARY
+GTEST_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: GTEST_LIBRARY_DEBUG
+GTEST_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: GTEST_MAIN_LIBRARY
+GTEST_MAIN_LIBRARY-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: GTEST_MAIN_LIBRARY_DEBUG
+GTEST_MAIN_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ProcessorCount_cmd_nproc
 ProcessorCount_cmd_nproc-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: ProcessorCount_cmd_sysctl

@@ -368,6 +368,8 @@ CMakeFiles/yolo_detector_test.dir/detector.cpp.o
  /home/jachin/space/apollo_hit/test/yolo_detector_test/base/vehicle_struct.h
  /home/jachin/space/apollo_hit/test/yolo_detector_test/common/math_functions.h
  /home/jachin/space/apollo_hit/test/yolo_detector_test/common/util.h
+ /home/jachin/space/apollo_hit/test/yolo_detector_test/cyber/common/binary.h
+ /home/jachin/space/apollo_hit/test/yolo_detector_test/cyber/common/log.h
  /home/jachin/space/apollo_hit/test/yolo_detector_test/detector.cpp
  /home/jachin/space/apollo_hit/test/yolo_detector_test/detector.h
  /home/jachin/space/apollo_hit/test/yolo_detector_test/inference/inference.h
