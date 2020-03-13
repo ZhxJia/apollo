@@ -38,12 +38,12 @@ enum ContiObjectType {
 };
 
 enum ContiMeasState {
-  CONTI_DELETED = 0,
-  CONTI_NEW = 1,
-  CONTI_MEASURED = 2,
-  CONTI_PREDICTED = 3,
-  CONTI_DELETED_FOR = 4,
-  CONTI_NEW_FROM_MERGE = 5
+  CONTI_DELETED = 0, //已删除object:在object id消失之前的最后一次传输周期中显示
+  CONTI_NEW = 1,     //创建新的object:在创建此object id后的第一次传输周期中显示
+  CONTI_MEASURED = 2, //测量，object的创建已通过实际测量确认
+  CONTI_PREDICTED = 3, //预测，实际测量无法确认object创建
+  CONTI_DELETED_FOR = 4,  //融合删除 与另一个object融合，再删除此object
+  CONTI_NEW_FROM_MERGE = 5 //合并出新，与别的object融合产生此object
 };
 
 enum ContiDynProp {

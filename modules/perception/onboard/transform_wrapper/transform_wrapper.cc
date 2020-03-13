@@ -113,7 +113,7 @@ void TransformWrapper::Init(
   novatel2world_tf2_frame_id_ = FLAGS_obs_novatel2world_tf2_frame_id;
   novatel2world_tf2_child_frame_id_ =
       FLAGS_obs_novatel2world_tf2_child_frame_id;
-  transform_cache_.SetCacheDuration(FLAGS_obs_transform_cache_size);
+  transform_cache_.SetCacheDuration(FLAGS_obs_transform_cache_size); //1.0
   inited_ = true;
 }
 

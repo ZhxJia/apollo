@@ -3,7 +3,7 @@ module_config {
   module_library : "/apollo/bazel-bin/modules/perception/onboard/component/libperception_component_lidar.so"
 
  components {
-    #组件名称，mainboard动态加载
+    #组件node_名称，mainboard动态加载
     class_name : "SegmentationComponent"
     config {
       #模块名

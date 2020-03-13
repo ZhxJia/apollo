@@ -50,12 +50,12 @@ bool ContiArsTracker::Init() {
   if (!model_config->get_value("macher_name", &matcher_name_)) {
     AERROR << "macher_name is not found.";
     state = false;
-  }
+  } //HMMatcher
   std::string chosen_filter;
   if (!model_config->get_value("chosen_filter", &chosen_filter)) {
     AERROR << "chosen_filter is not found.";
     state = false;
-  }
+  } //AdaptiveKalmanFilter
   RadarTrack::SetChosenFilter(chosen_filter);
   int tracked_times_threshold;
   if (!model_config->get_value("tracked_times_threshold",

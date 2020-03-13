@@ -29,7 +29,7 @@ namespace radar {
 bool RadarObstaclePerception::Init(const std::string& pipeline_name) {
   std::string model_name = pipeline_name;
   const ModelConfig* model_config = nullptr;
-  CHECK(ConfigManager::Instance()->GetModelConfig(model_name, &model_config))
+  CHECK(ConfigManager::Instance()->GetModelConfig(model_name, &model_config)) //对应于front和rear radar pipeline加载不同的参数
       << "not found model: " << model_name;
 
   std::string detector_name;

@@ -28,7 +28,7 @@ bool ContiArsPreprocessor::Init() {
   const lib::ModelConfig* model_config = nullptr;
   CHECK(lib::ConfigManager::Instance()->GetModelConfig(model_name,
                                                        &model_config));
-  CHECK(model_config->get_value("delay_time", &delay_time_));
+  CHECK(model_config->get_value("delay_time", &delay_time_)); //0.07
   return true;
 }
 
@@ -53,9 +53,9 @@ void ContiArsPreprocessor::SkipObjects(
   corrected_obstacles->mutable_header()->CopyFrom(raw_obstacles.header());
   double timestamp = raw_obstacles.header().timestamp_sec() - 1e-6;
   for (const auto& contiobs : raw_obstacles.contiobs()) {
-    double object_timestamp = contiobs.header().timestamp_sec();
+    double object_timestamp = contiobs.header().timestamp_sec(); //can分析仪为各个目标分配的时间戳
     if (object_timestamp > timestamp &&
-        object_timestamp < timestamp + CONTI_ARS_INTERVAL) {
+        object_timestamp < timestamp + CONTI_ARS_INTERVAL) { //??加号是超前了吗？
       drivers::ContiRadarObs* obs = corrected_obstacles->add_contiobs();
       *obs = contiobs;
     }
@@ -70,7 +70,7 @@ void ContiArsPreprocessor::ExpandIds(drivers::ContiRadar* corrected_obstacles) {
   for (int iobj = 0; iobj < corrected_obstacles->contiobs_size(); ++iobj) {
     const auto& contiobs = corrected_obstacles->contiobs(iobj);
     int id = contiobs.obstacle_id();
-    if (CONTI_NEW == contiobs.meas_state()) {
+    if (CONTI_NEW == contiobs.meas_state()) {  //测量状态为新创建的object
       local2global_[id] = GetNextId();
     } else {
       if (local2global_[id] == 0) {
@@ -85,7 +85,7 @@ void ContiArsPreprocessor::ExpandIds(drivers::ContiRadar* corrected_obstacles) {
 void ContiArsPreprocessor::CorrectTime(
     drivers::ContiRadar* corrected_obstacles) {
   double correct_timestamp =
-      corrected_obstacles->header().timestamp_sec() - delay_time_;
+      corrected_obstacles->header().timestamp_sec() - delay_time_; //0.07
   corrected_obstacles->mutable_header()->set_timestamp_sec(correct_timestamp);
 }
 

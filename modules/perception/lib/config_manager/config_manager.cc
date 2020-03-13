@@ -56,11 +56,11 @@ bool ConfigManager::InitInternal() {
   model_config_map_.clear();
 
   std::string config_module_path =
-      GetAbsolutePath(work_root_, FLAGS_config_manager_path);
+      GetAbsolutePath(work_root_, FLAGS_config_manager_path); // "./conf"
   AINFO << "WORK_ROOT: " << work_root_
         << " config_root_path: " << config_module_path;
 
-  std::vector<std::string> model_config_files;
+  std::vector<std::string> model_config_files; //查找该路径及子路径下所有后缀为config_manager.config的文件
   if (!common::GetFileList(config_module_path, "config_manager.config",
                            &model_config_files)) {
     AERROR << "config_root_path : " << config_module_path

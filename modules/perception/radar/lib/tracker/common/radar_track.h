@@ -65,10 +65,10 @@ class RadarTrack {
   base::ObjectPtr obs_ = nullptr;        // track result after tracking
   std::shared_ptr<BaseFilter> filter_ = nullptr;
 
-  static std::string s_chosen_filter_;
+  static std::string s_chosen_filter_; //AdaptiveKalmanFilter
   static int s_current_idx_;
-  static int s_tracked_times_threshold_;
-  static bool s_use_filter_;
+  static int s_tracked_times_threshold_; //3
+  static bool s_use_filter_; //false
 
   DISALLOW_COPY_AND_ASSIGN(RadarTrack);
 };
