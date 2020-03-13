@@ -1,0 +1,11 @@
+/home/jachin/Downloads/clion-2019.3.2/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/jachin/space/apollo_hit/test/io_util_test/io
+-- Found Threads: TRUE  
+find glog:/usr/local/lib/libglog.so
+find gflag:/usr/lib/x86_64-linux-gnu/libgflags.so
+version:
+gtest_include_dir=/usr/include
+gtest_library=/usr/local/lib/libgtest.a
+find Protobuf:/usr/local/include
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/jachin/space/apollo_hit/test/io_util_test/io/cmake-build-debug
