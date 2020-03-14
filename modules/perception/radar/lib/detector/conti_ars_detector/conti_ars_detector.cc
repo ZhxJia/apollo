@@ -40,13 +40,13 @@ void ContiArsDetector::RawObs2Frame(
   const Eigen::Matrix4d& radar2world = *(options.radar2world_pose);
   const Eigen::Matrix4d& radar2novatel = *(options.radar2novatel_trans);
   const Eigen::Vector3f& angular_speed = options.car_angular_speed;
-  Eigen::Matrix3d rotation_novatel;
+  Eigen::Matrix3d rotation_novatel; //车辆自身的角速度矩阵 注意是相对于局部地面坐标系(东-北-天)
   rotation_novatel << 0, -angular_speed(2), angular_speed(1), angular_speed(2),
-      0, -angular_speed(0), -angular_speed(1), angular_speed(0), 0;
+      0, -angular_speed(0), -angular_speed(1), angular_speed(0), 0; //注意车辆自身角速度与旋转矩阵的对应关系
   Eigen::Matrix3d rotation_radar = radar2novatel.topLeftCorner(3, 3).inverse() *
                                    rotation_novatel *
-                                   radar2novatel.topLeftCorner(3, 3);
-  Eigen::Matrix3d radar2world_rotate = radar2world.block<3, 3>(0, 0);
+                                   radar2novatel.topLeftCorner(3, 3);//先转换到novatel下旋转然后再转换回radar坐标系对应radar自身的角速度
+  Eigen::Matrix3d radar2world_rotate = radar2world.block<3, 3>(0, 0);//radar2world旋转矩阵
   Eigen::Matrix3d radar2world_rotate_t = radar2world_rotate.transpose();
   // Eigen::Vector3d radar2world_translation = radar2world.block<3, 1>(0, 3);
   ADEBUG << "radar2novatel: " << radar2novatel;
@@ -57,32 +57,32 @@ void ContiArsDetector::RawObs2Frame(
     radar_object->id = radar_obs.obstacle_id();
     radar_object->track_id = radar_obs.obstacle_id();
     Eigen::Vector4d local_loc(radar_obs.longitude_dist(),
-                              radar_obs.lateral_dist(), 0, 1);
+                              radar_obs.lateral_dist(), 0, 1);//radar坐标系下(x,y,0,1) 
     Eigen::Vector4d world_loc =
         static_cast<Eigen::Matrix<double, 4, 1, 0, 4, 1>>(radar2world *
-                                                          local_loc);
+                                                          local_loc); //将radar坐标系下的位置转换到世界坐标系下,世界坐标系一般为UMT坐标系
     radar_object->center = world_loc.block<3, 1>(0, 0);
     radar_object->anchor_point = radar_object->center;
 
     Eigen::Vector3d local_vel(radar_obs.longitude_vel(),
-                              radar_obs.lateral_vel(), 0);
+                              radar_obs.lateral_vel(), 0);//局部速度(v_x,v_y)相对于radar 注意x为radar正朝向的速度
 
     Eigen::Vector3d angular_trans_speed =
-        rotation_radar * local_loc.topLeftCorner(3, 1);
+        rotation_radar * local_loc.topLeftCorner(3, 1); //??(角速度转换到速度)v=wr
     Eigen::Vector3d world_vel =
         static_cast<Eigen::Matrix<double, 3, 1, 0, 3, 1>>(
-            radar2world_rotate * (local_vel + angular_trans_speed));
+            radar2world_rotate * (local_vel + angular_trans_speed));//世界坐标系下的速度
     Eigen::Vector3d vel_temp =
         world_vel + options.car_linear_speed.cast<double>();
-    radar_object->velocity = vel_temp.cast<float>();
+    radar_object->velocity = vel_temp.cast<float>(); //
 
     Eigen::Matrix3d dist_rms;
     dist_rms.setZero();
     Eigen::Matrix3d vel_rms;
     vel_rms.setZero();
-    dist_rms(0, 0) = radar_obs.longitude_dist_rms();
-    dist_rms(1, 1) = radar_obs.lateral_dist_rms();
-    vel_rms(0, 0) = radar_obs.longitude_vel_rms();
+    dist_rms(0, 0) = radar_obs.longitude_dist_rms(); //纵向距离的标准差
+    dist_rms(1, 1) = radar_obs.lateral_dist_rms(); //横向距离标准差
+    vel_rms(0, 0) = radar_obs.longitude_vel_rms(); //纵向速度的标准差
     vel_rms(1, 1) = radar_obs.lateral_vel_rms();
     radar_object->center_uncertainty =
         (radar2world_rotate * dist_rms * dist_rms.transpose() *
@@ -103,11 +103,11 @@ void ContiArsDetector::RawObs2Frame(
         static_cast<float>(radar_obs.oritation_angle_rms() / 180.0 * PI);
     radar_object->confidence = static_cast<float>(radar_obs.probexist());
 
-    int motion_state = radar_obs.dynprop();
+    int motion_state = radar_obs.dynprop(); //目标的运动状态
     double prob_target = radar_obs.probexist();
     if ((prob_target > MIN_PROBEXIST) &&
         (motion_state == CONTI_MOVING || motion_state == CONTI_ONCOMING ||
-         motion_state == CONTI_CROSSING_MOVING)) {
+         motion_state == CONTI_CROSSING_MOVING)) { //目标是运动的
       radar_object->motion_state = base::MotionState::MOVING;
     } else if (motion_state == CONTI_DYNAMIC_UNKNOWN) {
       radar_object->motion_state = base::MotionState::UNKNOWN;
@@ -146,7 +146,7 @@ void ContiArsDetector::RawObs2Frame(
     }
     MockRadarPolygon(radar_object);
 
-    float local_range = static_cast<float>(local_loc.head(2).norm());
+    float local_range = static_cast<float>(local_loc.head(2).norm()); //norm返回横纵轴距离的范数 sqrt(x^2+y^2)
     float local_angle =
         static_cast<float>(std::atan2(local_loc(1), local_loc(0)));
     radar_object->radar_supplement.range = local_range;

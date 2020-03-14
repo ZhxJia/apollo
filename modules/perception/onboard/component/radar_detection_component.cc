@@ -61,7 +61,7 @@ bool RadarDetectionComponent::Proc(const std::shared_ptr<ContiRadar>& message) {
         << std::to_string(message->header().timestamp_sec())
         << " current timestamp " << lib::TimeUtil::GetCurrentTime();
   std::shared_ptr<SensorFrameMessage> out_message(new (std::nothrow)
-                                                      SensorFrameMessage);
+                                                      SensorFrameMessage); //sensorFrameMessage封装了frame，frame封装了object
   if (!InternalProc(message, out_message)) {
     return false;
   }
@@ -143,7 +143,7 @@ bool RadarDetectionComponent::InternalProc(
   }
   PERCEPTION_PERF_BLOCK_END_WITH_INDICATOR(radar_info_.name,
                                            "GetSensor2worldTrans");
-  Eigen::Matrix4d radar2world_pose = radar_trans.matrix();
+  Eigen::Matrix4d radar2world_pose = radar_trans.matrix(); //提取affine3d对应的四维齐次矩阵
   options.detector_options.radar2world_pose = &radar2world_pose;
   Eigen::Matrix4d radar2novatel_trans_m = radar2novatel_trans.matrix();
   options.detector_options.radar2novatel_trans = &radar2novatel_trans_m;
@@ -157,7 +157,7 @@ bool RadarDetectionComponent::InternalProc(
   PERCEPTION_PERF_BLOCK_END_WITH_INDICATOR(radar_info_.name, "GetCarSpeed");
   // Init roi_filter_options
   base::PointD position;
-  position.x = radar_trans(0, 3);
+  position.x = radar_trans(0, 3); //radar相对于世界坐标系原点的位置
   position.y = radar_trans(1, 3);
   position.z = radar_trans(2, 3);
   options.roi_filter_options.roi.reset(new base::HdmapStruct());
