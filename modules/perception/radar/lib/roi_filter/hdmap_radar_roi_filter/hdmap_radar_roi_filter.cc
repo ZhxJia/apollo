@@ -23,7 +23,7 @@ namespace radar {
 
 bool HdmapRadarRoiFilter::RoiFilter(const RoiFilterOptions& options,
                                     base::FramePtr radar_frame) {
-  std::vector<base::ObjectPtr> origin_objects = radar_frame->objects;
+  std::vector<base::ObjectPtr> origin_objects = radar_frame->objects; //复制构造
   return common::ObjectInRoiCheck(options.roi, origin_objects,
                                   &radar_frame->objects);
 }

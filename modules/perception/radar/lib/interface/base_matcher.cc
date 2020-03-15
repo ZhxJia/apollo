@@ -39,26 +39,26 @@ void BaseMatcher::IDMatch(const std::vector<RadarTrackPtr> &radar_tracks,
                           std::vector<TrackObjectPair> *assignments,
                           std::vector<size_t> *unassigned_tracks,
                           std::vector<size_t> *unassigned_objects) {
-  size_t num_track = radar_tracks.size();
-  const auto &objects = radar_frame.objects;
+  size_t num_track = radar_tracks.size();//当前已跟踪的物体数量
+  const auto &objects = radar_frame.objects;//当前帧检测物体的列表
   double object_timestamp = radar_frame.timestamp;
   size_t num_obj = objects.size();
   if (num_track == 0 || num_obj == 0) {
     unassigned_tracks->resize(num_track);
     unassigned_objects->resize(num_obj);
-    std::iota(unassigned_tracks->begin(), unassigned_tracks->end(), 0);
+    std::iota(unassigned_tracks->begin(), unassigned_tracks->end(), 0);//从0开始递增
     std::iota(unassigned_objects->begin(), unassigned_objects->end(), 0);
     return;
   }
   std::vector<bool> track_used(num_track, false);
   std::vector<bool> object_used(num_obj, false);
   for (size_t i = 0; i < num_track; ++i) {
-    const auto &track_object = radar_tracks[i]->GetObsRadar();
+    const auto &track_object = radar_tracks[i]->GetObsRadar(); //获取该跟踪器中的物体
     double track_timestamp = radar_tracks[i]->GetTimestamp();
     CHECK_NOTNULL(track_object.get());
-    int track_object_track_id = track_object->track_id;
+    int track_object_track_id = track_object->track_id; //跟踪器中物体的track_id
     for (size_t j = 0; j < num_obj; ++j) {
-      int object_track_id = objects[j]->track_id;
+      int object_track_id = objects[j]->track_id; //当前帧检测物体的track_id
       if (track_object_track_id == object_track_id &&
           RefinedTrack(track_object, track_timestamp, objects[j],
                        object_timestamp)) {

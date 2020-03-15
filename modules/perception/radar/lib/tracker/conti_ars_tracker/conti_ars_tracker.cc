@@ -97,7 +97,7 @@ void ContiArsTracker::TrackObjects(const base::Frame &radar_frame) {
   std::vector<TrackObjectPair> assignments;
   std::vector<size_t> unassigned_tracks;
   std::vector<size_t> unassigned_objects;
-  TrackObjectMatcherOptions matcher_options;
+  TrackObjectMatcherOptions matcher_options; //ref_point
   const auto &radar_tracks = track_manager_->GetTracks();
   matcher_->Match(radar_tracks, radar_frame, matcher_options, &assignments,
                   &unassigned_tracks, &unassigned_objects);

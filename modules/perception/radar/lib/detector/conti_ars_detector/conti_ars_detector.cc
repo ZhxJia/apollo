@@ -42,7 +42,7 @@ void ContiArsDetector::RawObs2Frame(
   const Eigen::Vector3f& angular_speed = options.car_angular_speed;
   Eigen::Matrix3d rotation_novatel; //车辆自身的角速度矩阵 注意是相对于局部地面坐标系(东-北-天)
   rotation_novatel << 0, -angular_speed(2), angular_speed(1), angular_speed(2),
-      0, -angular_speed(0), -angular_speed(1), angular_speed(0), 0; //注意车辆自身角速度与旋转矩阵的对应关系
+      0, -angular_speed(0), -angular_speed(1), angular_speed(0), 0; //线速度等于角速度叉乘矢径
   Eigen::Matrix3d rotation_radar = radar2novatel.topLeftCorner(3, 3).inverse() *
                                    rotation_novatel *
                                    radar2novatel.topLeftCorner(3, 3);//先转换到novatel下旋转然后再转换回radar坐标系对应radar自身的角速度
@@ -68,7 +68,7 @@ void ContiArsDetector::RawObs2Frame(
                               radar_obs.lateral_vel(), 0);//局部速度(v_x,v_y)相对于radar 注意x为radar正朝向的速度
 
     Eigen::Vector3d angular_trans_speed =
-        rotation_radar * local_loc.topLeftCorner(3, 1); //??(角速度转换到速度)v=wr
+        rotation_radar * local_loc.topLeftCorner(3, 1); //??(角速度转换到速度)v=w^ r
     Eigen::Vector3d world_vel =
         static_cast<Eigen::Matrix<double, 3, 1, 0, 3, 1>>(
             radar2world_rotate * (local_vel + angular_trans_speed));//世界坐标系下的速度
@@ -144,7 +144,7 @@ void ContiArsDetector::RawObs2Frame(
         radar_object->size(1) = 1.0f;
       }
     }
-    MockRadarPolygon(radar_object);
+    MockRadarPolygon(radar_object); //根据物体中心和
 
     float local_range = static_cast<float>(local_loc.head(2).norm()); //norm返回横纵轴距离的范数 sqrt(x^2+y^2)
     float local_angle =

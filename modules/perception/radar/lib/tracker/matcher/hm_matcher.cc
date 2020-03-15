@@ -98,7 +98,7 @@ bool HMMatcher::RefinedTrack(const base::ObjectPtr &track_object,
                 0.5 * compute_distance(radar_object, radar_timestamp,
                                        track_object, track_timestamp);
 
-  return dist < BaseMatcher::GetMaxMatchDistance();
+  return dist < BaseMatcher::GetMaxMatchDistance(); //2.5
 }
 
 void HMMatcher::TrackObjectPropertyMatch(
@@ -112,9 +112,9 @@ void HMMatcher::TrackObjectPropertyMatch(
   std::vector<std::vector<double> > association_mat(unassigned_tracks->size());
   for (size_t i = 0; i < association_mat.size(); ++i) {
     association_mat[i].resize(unassigned_objects->size(), 0);
-  }
+  } //将未关联的object和track建立矩阵
   ComputeAssociationMat(radar_tracks, radar_frame, *unassigned_tracks,
-                        *unassigned_objects, &association_mat);
+                        *unassigned_objects, &association_mat); //计算未分配的track和object之间(距离)的关联矩阵association
 
   // from perception-common
   common::SecureMat<double> *global_costs =
