@@ -83,10 +83,10 @@ void ContiArsDetector::RawObs2Frame(
     dist_rms(0, 0) = radar_obs.longitude_dist_rms(); //纵向距离的标准差
     dist_rms(1, 1) = radar_obs.lateral_dist_rms(); //横向距离标准差
     vel_rms(0, 0) = radar_obs.longitude_vel_rms(); //纵向速度的标准差
-    vel_rms(1, 1) = radar_obs.lateral_vel_rms();
+    vel_rms(1, 1) = radar_obs.lateral_vel_rms(); //横向速度标准差
     radar_object->center_uncertainty =
         (radar2world_rotate * dist_rms * dist_rms.transpose() *
-         radar2world_rotate_t)
+         radar2world_rotate_t) //世界坐标系下的协方差(R*rms)(R*rms)^T
             .cast<float>();
 
     radar_object->velocity_uncertainty =

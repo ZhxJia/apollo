@@ -79,7 +79,7 @@ Eigen::VectorXd AdaptiveKalmanFilter::UpdateWithObject(
       new_object.velocity_uncertainty.topLeftCorner(2, 2).cast<double>();
   k_matrix_ =
       p_matrix_ * c_matrix_.transpose() *
-      (c_matrix_ * p_matrix_ * c_matrix_.transpose() + r_matrix_).inverse();
+      (c_matrix_ * p_matrix_ * c_matrix_.transpose() + r_matrix_).inverse(); //c为测量矩阵
   Eigen::Vector4d predict_measurement(priori_state_(0), priori_state_(1),
                                       priori_state_(2), priori_state_(3));
   posteriori_state_ =
