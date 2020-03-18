@@ -135,7 +135,7 @@ bool DarkSCNNLaneDetector::Init(const LaneDetectorInitOptions &options) {
         << input_reshape[net_inputs_[0]][2] << ", "
         << input_reshape[net_inputs_[0]][3];
   if (!cnnadapter_lane_->Init(input_reshape)) {
-    AINFO << "net init fail.";
+    AINFO << "net init fail."; //加载模型结构和参数到caffe中
     return false;
   }
 
@@ -181,7 +181,7 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
       << "Input size is not correct: " << input_height_ << " vs "
       << data_provider->src_height();
 
-  // use data provider to crop input image
+  // use data provider to crop input image -> output: image_src_
   CHECK(data_provider->GetImage(data_provider_image_option_, &image_src_));
 
   //  bottom 0 is data
