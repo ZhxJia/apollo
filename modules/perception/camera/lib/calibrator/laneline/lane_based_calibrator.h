@@ -113,7 +113,7 @@ class LaneBasedCalibrator {
 
   bool IsTravelingStraight(const float &vehicle_yaw_changed) const {
     float abs_yaw = static_cast<float>(fabs(vehicle_yaw_changed));
-    return abs_yaw < params_.max_allowed_yaw_angle_in_radian;
+    return abs_yaw < params_.max_allowed_yaw_angle_in_radian; //3度
   }
 
   bool GetVanishingPoint(const EgoLane &lane, VanishingPoint *v_point);
@@ -145,8 +145,8 @@ class LaneBasedCalibrator {
   float accumulated_straight_driving_in_meter_ = 0.0f;
 
   // EgoLane lane_;
-  HistogramEstimator pitch_histogram_;
-  std::deque<VanishingPoint> vp_buffer_;
+  HistogramEstimator pitch_histogram_; //默认参数位于构造函数中
+  std::deque<VanishingPoint> vp_buffer_; //双端队列
   CalibratorParams params_;
 };
 

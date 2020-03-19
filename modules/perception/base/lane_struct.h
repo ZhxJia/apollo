@@ -32,7 +32,7 @@ enum class LaneLineType {
 
 /// Definition of the position of a lane marking in respect to the ego lane.
 enum class LaneLinePositionType {
-  CURB_LEFT = -5,
+  CURB_LEFT = -5,      //!<马路牙子
   FOURTH_LEFT = -4,
   THIRD_LEFT = -3,
   ADJACENT_LEFT = -2,  //!< lane marking on the left side next to ego lane
@@ -76,7 +76,7 @@ struct LaneLine {
   // @brief image coordinate system
   LaneLineCubicCurve curve_image_coord;
   // @brief curve image point set
-  std::vector<Point2DF> curve_image_point_set;
+  std::vector<Point2DF> curve_image_point_set; //点存储顺序由近及远
   // @brief curve camera point set
   std::vector<Point3DF> curve_camera_point_set;
   // @brief curve car coord point set, only on XY plane

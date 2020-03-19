@@ -26,20 +26,20 @@ void GetYawVelocityInfo(const float &time_diff, const double cam_coord_cur[3],
                         float *velocity) {
   assert(yaw_rate != nullptr);
   assert(velocity != nullptr);
-  double time_diff_r = common::IRec(static_cast<double>(time_diff));
+  double time_diff_r = common::IRec(static_cast<double>(time_diff)); 
   double dist =
-      common::ISqrt(common::ISquaresumDiffU2(cam_coord_cur, cam_coord_pre));
+      common::ISqrt(common::ISquaresumDiffU2(cam_coord_cur, cam_coord_pre)); //相机在世界坐标系下位移
   *velocity = static_cast<float>(dist * time_diff_r);
 
   double offset_cur[2] = {
       cam_coord_cur[0] - cam_coord_pre[0],
       cam_coord_cur[1] - cam_coord_pre[1],
-  };
+  }; //delta dis
   double offset_pre[2] = {
       cam_coord_pre[0] - cam_coord_pre_pre[0],
       cam_coord_pre[1] - cam_coord_pre_pre[1],
   };
-  double yaw_cur = atan2(offset_cur[1], offset_cur[0]);
+  double yaw_cur = atan2(offset_cur[1], offset_cur[0]); //车辆yaw角度(东北天坐标系)
   double yaw_pre = atan2(offset_pre[1], offset_pre[0]);
   double yaw_rate_db = (yaw_cur - yaw_pre) * time_diff_r;
   *yaw_rate = static_cast<float>(yaw_rate_db);
@@ -57,7 +57,7 @@ void CalibratorParams::Init() {
 
   // Fast set-up
   min_distance_to_update_calibration_in_meter = 100.0f;
-  min_required_straight_driving_distance_in_meter = 20.0f;
+  min_required_straight_driving_distance_in_meter = 20.0f; //标定所要求的最低前行距离
 
   // Histogram params
   hist_estimator_params.nr_bins_in_histogram = 400;
@@ -77,9 +77,9 @@ void CalibratorParams::Init() {
   hist_estimator_params.smooth_kernel.push_back(3);
   hist_estimator_params.smooth_kernel.push_back(1);
   hist_estimator_params.smooth_kernel_width =
-      static_cast<int>(hist_estimator_params.smooth_kernel.size());
+      static_cast<int>(hist_estimator_params.smooth_kernel.size());//5
   hist_estimator_params.smooth_kernel_radius =
-      hist_estimator_params.smooth_kernel_width >> 1;
+      hist_estimator_params.smooth_kernel_width >> 1; //10
 
   hist_estimator_params.hat_min_allowed = 0.40f;
   hist_estimator_params.hat_std_allowed = 6.25f;
@@ -104,7 +104,7 @@ void LaneBasedCalibrator::Init(const LocalCalibratorInitOptions &options,
   k_mat_[8] = 1.0f;
 
   if (params != nullptr) {
-    params_ = *params;
+    params_ = *params; //CalibratorParams 参数初始化在构造函数中
   }
   pitch_histogram_.Init(&params_.hist_estimator_params);
 }
@@ -147,7 +147,7 @@ bool LaneBasedCalibrator::Process(const EgoLane &lane, const float &velocity,
     AINFO << "Lane is not valid for calibration.";
     return false;
   }
-  vp_cur.distance_traveled = distance_traveled_in_meter;
+  vp_cur.distance_traveled = distance_traveled_in_meter; //这帧之间前行的距离
   //  std::cout << "#current v-row: " << vp_cur.pixel_pos[1] << std::endl;
 
   // Push vanishing point into buffer
@@ -189,11 +189,11 @@ bool LaneBasedCalibrator::Process(const EgoLane &lane, const float &velocity,
 
 void LaneBasedCalibrator::PushVanishingPoint(const VanishingPoint &v_point) {
   int nr_vps = static_cast<int>(vp_buffer_.size());
-  if (nr_vps < kMaxNrHistoryFrames) {
+  if (nr_vps < kMaxNrHistoryFrames) { //defalut : 1000
     vp_buffer_.push_back(v_point);
   } else {
     vp_buffer_.pop_front();
-    vp_buffer_.push_back(v_point);
+    vp_buffer_.push_back(v_point); //将最早的剔除，然后往后添加
   }
 }
 
@@ -203,7 +203,7 @@ bool LaneBasedCalibrator::PopVanishingPoint(VanishingPoint *v_point) {
     accumulated_distance += vp.distance_traveled;
   }
   if (accumulated_distance <
-      params_.min_required_straight_driving_distance_in_meter) {
+      params_.min_required_straight_driving_distance_in_meter) { //default:20
     return false;
   }
   *v_point = vp_buffer_.back();
@@ -238,7 +238,7 @@ bool LaneBasedCalibrator::GetVanishingPoint(const EgoLane &lane,
 
   // Get line segment
   bool get_line_seg_left =
-      SelectTwoPointsFromLineForVanishingPoint(lane.left_line, line_seg_l);
+      SelectTwoPointsFromLineForVanishingPoint(lane.left_line, line_seg_l);//获取左右ego line的部分或全部线段
   if (!get_line_seg_left) {
     AINFO << "Left lane is too short.";
     return false;
@@ -264,14 +264,14 @@ int LaneBasedCalibrator::GetCenterIndex(const Eigen::Vector2f *points,
   float center_x = 0.0f;
   float center_y = 0.0f;
   for (int i = 0; i < nr_pts; ++i) {
-    center_x += points[i](0);
-    center_y += points[i](1);
+    center_x += points[i](0); //x
+    center_y += points[i](1); //y
   }
-  center_x /= static_cast<float>(nr_pts);
-  center_y /= static_cast<float>(nr_pts);
+  center_x /= static_cast<float>(nr_pts); //车道线中心点x
+  center_y /= static_cast<float>(nr_pts); //中心点y
   float dist = 0.0f;
   float dist_min = static_cast<float>(fabs(points[0](0) - center_x) +
-                                      fabs(points[0](1) - center_y));
+                                      fabs(points[0](1) - center_y)); //中心点到近处车道线点的距离
   int center_index = 0;
   for (int i = 1; i < nr_pts; ++i) {
     dist = static_cast<float>(fabs(points[i](0) - center_x) +
@@ -280,35 +280,35 @@ int LaneBasedCalibrator::GetCenterIndex(const Eigen::Vector2f *points,
       dist_min = dist;
       center_index = i;
     }
-  }
+  } //找到计算的中心点对应的实际车道线点
   return is_in_image(points[center_index]) ? center_index : -1;
 }
 
 bool LaneBasedCalibrator::SelectTwoPointsFromLineForVanishingPoint(
     const LaneLine &line, float line_seg[4]) {
   int nr_pts = static_cast<int>(line.lane_point.size());
-  if (nr_pts < params_.min_nr_pts_laneline) {
+  if (nr_pts < params_.min_nr_pts_laneline) { //default:20
     return false;
   }
 
-  int nr_samples = nr_pts * static_cast<int>(params_.sampling_lane_point_rate);
+  int nr_samples = nr_pts * static_cast<int>(params_.sampling_lane_point_rate); //default:0.05 ？？？？ 0 这里的强制转换操作看不懂
   int offset_end = nr_pts - nr_samples - 1;
-  int sampled_start = GetCenterIndex(line.lane_point.data(), nr_samples);
+  int sampled_start = GetCenterIndex(line.lane_point.data(), nr_samples); //返回前nr_samples个点的中心点对应的索引，获取失败的返回-1
   int sampled_end =
       offset_end +
-      GetCenterIndex(line.lane_point.data() + offset_end, nr_samples);
+      GetCenterIndex(line.lane_point.data() + offset_end, nr_samples);//返回nr_samples往后的nr_samples个点的车道线中心点
 
   if (sampled_start >= 0 && sampled_end >= 0) {
     line_seg[0] = line.lane_point[sampled_start](0);  // start
     line_seg[1] = line.lane_point[sampled_start](1);
     line_seg[2] = line.lane_point[sampled_end](0);  // end
-    line_seg[3] = line.lane_point[sampled_end](1);
+    line_seg[3] = line.lane_point[sampled_end](1); //使用对应的车道线截取的线段
   } else {
     line_seg[0] = line.lane_point.front()(0);  // start
     line_seg[1] = line.lane_point.front()(1);
     line_seg[2] = line.lane_point.back()(0);  // end
     line_seg[3] = line.lane_point.back()(1);
-  }
+  } //使用整条车道线
 
   // Ensure start is lower than end
   if (line_seg[3] > line_seg[1]) {
@@ -354,7 +354,7 @@ bool LaneBasedCalibrator::GetIntersectionFromTwoLineSegments(
 
   float v10[2] = {left_end_x - left_start_x, left_end_y - left_start_y};
   float v32[2] = {right_end_x - right_start_x, right_end_y - right_start_y};
-  float dn = v10[0] * v32[1] - v10[1] * v32[0];
+  float dn = v10[0] * v32[1] - v10[1] * v32[0];//平行 x1y2 = x2y1
 
   // Colinear
   if (fabs(dn) < 1e-5) {

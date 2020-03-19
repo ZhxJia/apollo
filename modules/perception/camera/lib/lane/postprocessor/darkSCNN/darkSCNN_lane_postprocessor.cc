@@ -134,29 +134,29 @@ bool DarkSCNNLanePostprocessor::Process2D(
   // 1. Sample points on lane_map and project them onto world coordinate
 
   // TODO(techoe): Should be fixed
-  int y = static_cast<int>(lane_map.rows * 0.9 - 1);
+  int y = static_cast<int>(lane_map.rows * 0.9 - 1); //480*0.9-1 = 431
   // TODO(techoe): Should be fixed
-  int step_y = (y - 40) * (y - 40) / 6400 + 1;
+  int step_y = (y - 40) * (y - 40) / 6400 + 1; //24 每隔24行检测一次边界线
 
-  xy_points.clear();
-  xy_points.resize(lane_type_num_);
-  uv_points.clear();
+  xy_points.clear(); //xy points(every lane type) for ground plane
+  xy_points.resize(lane_type_num_); 
+  uv_points.clear(); //uv points for image plane
   uv_points.resize(lane_type_num_);
 
-  while (y > 0) {
+  while (y > 0) { //由近及远
     for (int x = 1; x < lane_map.cols - 1; ++x) {
-      int value = static_cast<int>(round(lane_map.at<float>(y, x)));
+      int value = static_cast<int>(round(lane_map.at<float>(y, x)));//注意行列对应于y,x
       // lane on left
 
-      if ((value > 0 && value < 5) || value == 11) {
-        // right edge (inner) of the lane
-        if (value != static_cast<int>(round(lane_map.at<float>(y, x + 1)))) {
+      if ((value > 0 && value < 5) || value == 11) { //对应左车道线类型
+        // right edge (inner) of the lane 左侧车道线检测右边界
+        if (value != static_cast<int>(round(lane_map.at<float>(y, x + 1)))) { //右边界
           Eigen::Matrix<float, 3, 1> img_point(
               static_cast<float>(x * roi_width_ / lane_map.cols),
               static_cast<float>(y * roi_height_ / lane_map.rows + roi_start_),
-              1.0);
+              1.0); //原x,y是640*480输出，将点还原到1920*1080图像中
           Eigen::Matrix<float, 3, 1> xy_p;
-          xy_p = trans_mat_ * img_point;
+          xy_p = trans_mat_ * img_point; //图像点到地平面点的单应变换
           Eigen::Matrix<float, 2, 1> xy_point;
           Eigen::Matrix<float, 2, 1> uv_point;
           if (std::fabs(xy_p(2)) < 1e-6) continue;
@@ -167,17 +167,17 @@ bool DarkSCNNLanePostprocessor::Process2D(
               xy_point(0) > max_longitudinal_distance_ ||
               std::abs(xy_point(1)) > 30.0) {
             continue;
-          }
+          } //注意地平面坐标系?? 查看地平面中车道线的点是否位于正常的区域内   x对应纵向,y对应横向
           uv_point << static_cast<float>(x * roi_width_ / lane_map.cols),
-              static_cast<float>(y * roi_height_ / lane_map.rows + roi_start_);
+              static_cast<float>(y * roi_height_ / lane_map.rows + roi_start_);//根据映射到地平面中的点的信息决定是否保存图像中的车道线边界点
           if (xy_points[value].size() < minNumPoints_ || xy_point(0) < 50.0f ||
               std::fabs(xy_point(1) - xy_points[value].back()(1)) < 1.0f) {
-            xy_points[value].push_back(xy_point);
-            uv_points[value].push_back(uv_point);
+            xy_points[value].push_back(xy_point); //条件对应有限考虑的点:纵向距离小于50m,相邻横向距离小于1m的优先考虑
+            uv_points[value].push_back(uv_point); //将点添加到对应类型的vector中
           }
         }
       } else if (value >= 5 && value < lane_type_num_) {
-        // Left edge (inner) of the lane
+        // Left edge (inner) of the lane 右侧车道线检测左边界
         if (value != static_cast<int>(round(lane_map.at<float>(y, x - 1)))) {
           Eigen::Matrix<float, 3, 1> img_point(
               static_cast<float>(x * roi_width_ / lane_map.cols),
@@ -207,8 +207,8 @@ bool DarkSCNNLanePostprocessor::Process2D(
         }
       }
     }
-    step_y = (y - 45) * (y - 45) / 6400 + 1;
-    y -= step_y;
+    step_y = (y - 45) * (y - 45) / 6400 + 1; //动态调整步长 越靠近45步长越小
+    y -= step_y; 
   }
 
   auto elapsed_1 = std::chrono::high_resolution_clock::now() - start;
@@ -216,8 +216,8 @@ bool DarkSCNNLanePostprocessor::Process2D(
       std::chrono::duration_cast<std::chrono::microseconds>(elapsed_1).count();
   time_1 += microseconds_1;
 
-  // 2. Remove outliers and Do a ransac fitting
-  std::vector<Eigen::Matrix<float, 4, 1>> coeffs;
+  // 2. Remove outliers and Do a ransac fitting 通过ransac去除离群值
+  std::vector<Eigen::Matrix<float, 4, 1>> coeffs; //多项式系数
   std::vector<Eigen::Matrix<float, 4, 1>> img_coeffs;
   std::vector<Eigen::Matrix<float, 2, 1>> selected_xy_points;
   coeffs.resize(lane_type_num_);
@@ -251,8 +251,8 @@ bool DarkSCNNLanePostprocessor::Process2D(
         static_cast<float>(coeffs[i](3)), static_cast<float>(coeffs[i](2)),
         static_cast<float>(coeffs[i](1)), static_cast<float>(coeffs[i](0)),
         static_cast<float>(3.0));
-  }
-  // [1] Determine lane spatial tag in special cases
+  } //x= 3时，对应三阶多项式的值y
+  // [1] Determine lane spatial tag in special cases //ego left center right
   if (xy_points[4].size() < minNumPoints_ &&
       xy_points[5].size() >= minNumPoints_) {
     std::swap(xy_points[4], xy_points[5]);
@@ -265,7 +265,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
     std::swap(uv_points[6], uv_points[5]);
     std::swap(coeffs[6], coeffs[5]);
     std::swap(c0s[6], c0s[5]);
-  }
+  } //没有ego left right边界，则将ego center作为ego left right边界  我觉得可能是踩边界线了
 
   if (xy_points[4].size() < minNumPoints_ &&
       xy_points[11].size() >= minNumPoints_) {
@@ -276,7 +276,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
         use_boundary = false;
         break;
       }
-    }
+    } //没有有效的左车道线，将左边界(马路牙子)作为左车道线
     if (use_boundary) {
       std::swap(xy_points[4], xy_points[11]);
       std::swap(uv_points[4], uv_points[11]);
@@ -287,7 +287,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
 
   if (xy_points[6].size() < minNumPoints_ &&
       xy_points[12].size() >= minNumPoints_) {
-    // Use right lane boundary as the left most missing right lane,
+    // Use right lane boundary as the left most missing right lane, 同理
     bool use_boundary = true;
     for (int k = 7; k <= 9; ++k) {
       if (xy_points[k].size() >= minNumPoints_) {
@@ -314,11 +314,11 @@ bool DarkSCNNLanePostprocessor::Process2D(
 
     // [3] Determine which lines are valid according to the y value at x = 3
     if ((i < 5 && c0s[i] < c0s[i + 1]) ||
-        (i > 5 && i < 10 && c0s[i] > c0s[i - 1])) {
-      continue;
-    }
+        (i > 5 && i < 10 && c0s[i] > c0s[i - 1])) { //      ^ x
+      continue;                                     //      |
+    }                                               // y <------
     if (i == 11 || i == 12) {
-      std::sort(c0s.begin(), c0s.begin() + 10);
+      std::sort(c0s.begin(), c0s.begin() + 10); //升序
       if ((c0s[i] > c0s[0] && i == 12) || (c0s[i] < c0s[9] && i == 11)) {
         continue;
       }
@@ -338,7 +338,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
     cur_object.curve_car_coord_point_set.clear();
     for (size_t j = 0; j < xy_points[i].size(); ++j) {
       base::Point2DF p_j;
-      p_j.x = static_cast<float>(xy_points[i][j](0));
+      p_j.x = static_cast<float>(xy_points[i][j](0)); //i 类别, j坐标点
       p_j.y = static_cast<float>(xy_points[i][j](1));
       cur_object.curve_car_coord_point_set.push_back(p_j);
     }
@@ -362,7 +362,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
   for (auto lane_ : frame->lane_objects) {
     if (lane_.pos_type == base::LaneLinePositionType::EGO_CENTER) {
       if (lane_.curve_car_coord.d >= 0) {
-        has_center_ = 1;
+        has_center_ = 1; //d>=0 对应左边
       } else if (lane_.curve_car_coord.d < 0) {
         has_center_ = 2;
       }
@@ -375,7 +375,7 @@ bool DarkSCNNLanePostprocessor::Process2D(
       int spatial_id = spatialLUTind[lane_.pos_type];
       if (spatial_id >= 1 && spatial_id <= 5) {
         lane_.pos_type = spatialLUT[spatial_id - 1];
-      }
+      }//将原先的标签整体左移
     }
   } else if (has_center_ == 2) {
     for (auto& lane_ : frame->lane_objects) {

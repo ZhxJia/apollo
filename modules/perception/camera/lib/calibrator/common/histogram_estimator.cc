@@ -45,14 +45,14 @@ void HistogramEstimatorParams::Init() {  // set default value
 
 void HistogramEstimator::Init(const HistogramEstimatorParams *params) {
   if (params != nullptr) {
-    params_ = *params;
+    params_ = *params; //HistogramEstimatorParams 默认参数在构造函数中，此处由CalibratorParams中的参数覆盖
   }
   step_bin_reversed_ = common::IRec(params_.step_bin);
   assert(params_.nr_bins_in_histogram > 0);
   assert(params_.nr_bins_in_histogram <= kMaxNrBins);
-  int nr_bins = params_.nr_bins_in_histogram;
+  int nr_bins = params_.nr_bins_in_histogram; //400
   memset(hist_.data(), 0, sizeof(uint32_t) * nr_bins);
-  GenerateHat(hist_hat_.data(), nr_bins);
+  GenerateHat(hist_hat_.data(), nr_bins); //out: hist_hat
 }
 
 bool HistogramEstimator::Process() {
@@ -148,13 +148,13 @@ void HistogramEstimator::Smooth(const uint32_t *hist_input, int nr_bins,
 }
 
 void HistogramEstimator::GenerateHat(float *hist_hat, int nr_bins) {
-  assert(nr_bins == params_.nr_bins_in_histogram);
+  assert(nr_bins == params_.nr_bins_in_histogram); //400
   // Equation: e^(-(x^2 / (2 * a^2)) + b
   // a -> hat_std_allowed
   // b -> hat_min_allowed
   // max: 1 + hat_min_allowed
-  float hat_std_allowed = params_.hat_std_allowed;
-  float hat_min_allowed = params_.hat_min_allowed;
+  float hat_std_allowed = params_.hat_std_allowed; //6.25
+  float hat_min_allowed = params_.hat_min_allowed; //0.40
   int nr_bins_half = nr_bins >> 1;
   for (int i = 0; i < nr_bins; ++i) {
     float val = static_cast<float>(i - nr_bins_half) / hat_std_allowed;

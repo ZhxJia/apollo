@@ -44,20 +44,21 @@ bool LaneLineCalibrator::Calibrate(const CalibratorOptions &options,
   cam_ori[3] = 1.0;
 
   // Camera to world pose
-  Eigen::Affine3d c2w = *options.camera2world_pose;
+  Eigen::Affine3d c2w = *options.camera2world_pose; //4*4
 
   double p2w[12] = {
-      c2w(0, 0), c2w(0, 1), c2w(0, 2), c2w(0, 3), c2w(1, 0), c2w(1, 1),
-      c2w(1, 2), c2w(1, 3), c2w(2, 0), c2w(2, 1), c2w(2, 2), c2w(2, 3),
-  };
+      c2w(0, 0), c2w(0, 1), c2w(0, 2), c2w(0, 3), 
+      c2w(1, 0), c2w(1, 1), c2w(1, 2), c2w(1, 3),
+      c2w(2, 0), c2w(2, 1), c2w(2, 2), c2w(2, 3),
+  };//[R|T]
 
   ADEBUG << "c2w transform this frame:\n"
          << p2w[0] << ", " << p2w[1] << ", " << p2w[2] << ", " << p2w[3] << "\n"
          << p2w[4] << ", " << p2w[5] << ", " << p2w[6] << ", " << p2w[7] << "\n"
          << p2w[8] << ", " << p2w[9] << ", " << p2w[10] << ", " << p2w[11];
 
-  common::IMultAx3x4(p2w, cam_ori, cam_coord_cur_);
-  time_diff_ = kTimeDiffDefault;
+  common::IMultAx3x4(p2w, cam_ori, cam_coord_cur_);//p2w * cam_ori -> cam_coord_cur_ 世界坐标系下相机的位置 p_w = T_w2c * 0 
+  time_diff_ = kTimeDiffDefault; //15fps -> 0.067s/frame
   yaw_rate_ = kYawRateDefault;
   velocity_ = kVelocityDefault;
 
@@ -101,19 +102,19 @@ bool LaneLineCalibrator::LoadEgoLaneline(
   for (size_t i = 0; i < lane_objects.size(); ++i) {
     if (lane_objects[i].pos_type == base::LaneLinePositionType::EGO_LEFT) {
       int num_points =
-          static_cast<int>(lane_objects[i].curve_image_point_set.size());
+          static_cast<int>(lane_objects[i].curve_image_point_set.size()); //ego left 车道线点的数量
       ego_lane->left_line.lane_point.resize(num_points);
-      const auto &curve = lane_objects[i].curve_image_coord;
+      const auto &curve = lane_objects[i].curve_image_coord; //车道线拟合多项式系数，但是前面的步骤并没有对curve_image_coord赋值???此处存疑
       float y_curve = 0.0f;
       float x_curve = 0.0f;
       float x_raw = 0.0f;
       for (int j = 0; j < num_points; ++j) {
-        y_curve = lane_objects[i].curve_image_point_set[j].y;
+        y_curve = lane_objects[i].curve_image_point_set[j].y; //y对应纵向
         x_curve = curve.a * common::ICub(y_curve) +
-                  curve.b * common::ISqr(y_curve) + curve.c * y_curve + curve.d;
+                  curve.b * common::ISqr(y_curve) + curve.c * y_curve + curve.d; //x = f(y) 注意原曲线拟合x方向为横轴,而像素坐标系下y为横轴
         x_raw = lane_objects[i].curve_image_point_set[j].x;
         ego_lane->left_line.lane_point[j](1) = y_curve;
-        ego_lane->left_line.lane_point[j](0) = (x_curve + x_raw) / 2;
+        ego_lane->left_line.lane_point[j](0) = (x_curve + x_raw) / 2; //取拟合值和原值的平均
       }
       found_ego_left = true;
     }

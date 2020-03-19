@@ -148,7 +148,7 @@ bool OnlineCalibrationService::QueryCameraToGroundHeightAndPitchAngle(
 void OnlineCalibrationService::Update(CameraFrame *frame) {
   CHECK(frame != nullptr);
   sensor_name_ = frame->data_provider->sensor_name();
-  if (sensor_name_ == master_sensor_name_) {
+  if (sensor_name_ == master_sensor_name_) { //front 6mm
     CalibratorOptions calibrator_options;
     calibrator_options.lane_objects =
         std::make_shared<std::vector<base::LaneLine>>(frame->lane_objects);

@@ -205,7 +205,7 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
       static_cast<float>(image_mean_[0]), static_cast<float>(image_mean_[1]),
       static_cast<float>(image_mean_[2]), false, static_cast<float>(1.0));
   ADEBUG << "resize gpu finish.";
-  cudaDeviceSynchronize();
+  cudaDeviceSynchronize(); //sync host and device 同步以保证能够访问gpu计算结果
   cnnadapter_lane_->Infer();
   ADEBUG << "infer finish.";
 
@@ -227,7 +227,7 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
     // , tmp, cv::Size(lane_output_width_, lane_output_height_), 0,
     //            0);
     masks.push_back(tmp);
-  }
+  } //output: n c h w 其中c为车道线数量
   std::vector<int> cnt_pixels(13, 0);
   cv::Mat mask_color(lane_output_height_, lane_output_width_, CV_32FC1);
   mask_color.setTo(cv::Scalar(0));
@@ -236,17 +236,17 @@ bool DarkSCNNLaneDetector::Detect(const LaneDetectorOptions &options,
       for (int w = 0; w < masks[c].cols; ++w) {
         if (masks[c].at<float>(h, w) >= confidence_threshold_lane_) {
           mask_color.at<float>(h, w) = static_cast<float>(c);
-          cnt_pixels[c]++;
+          cnt_pixels[c]++; //每个类别对应的像素数目
         }
       }
     }
-  }
+  } //为每一类(channel)中像素类别检测大于一定阈值的添加对应的类别标签
   memcpy(lane_blob_->mutable_cpu_data(),
          reinterpret_cast<float *>(mask_color.data),
-         lane_output_width_ * lane_output_height_ * sizeof(float));
+         lane_output_width_ * lane_output_height_ * sizeof(float)); //1,1,h,w
   // Don't use this way to copy data, it will modify data
   // lane_blob_->set_cpu_data((float*)mask_color.data);
-  frame->lane_detected_blob = lane_blob_;
+  frame->lane_detected_blob = lane_blob_; //lane_blob_为(1,1,h,w)的像素为类别的blob
 
   // retrieve vanishing point network output
   if (net_outputs_.size() > 1) {

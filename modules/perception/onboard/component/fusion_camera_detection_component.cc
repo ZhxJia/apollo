@@ -242,7 +242,7 @@ bool FusionCameraDetectionComponent::Init() {
       image_width_));
 
   homography_im2car_ = visualize_.homography_im2car();
-  camera_obstacle_pipeline_->SetIm2CarHomography(homography_im2car_);
+  camera_obstacle_pipeline_->SetIm2CarHomography(homography_im2car_); //用于车道线检测
 
   if (enable_cipv_) {
     cipv_.Init(homography_im2car_, min_laneline_length_for_cipv_,

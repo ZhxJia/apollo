@@ -148,7 +148,7 @@ bool RansacFitting(const std::vector<Eigen::Matrix<Dtype, 2, 1>>& pos_vec,
 
     Eigen::Matrix<Dtype, 3, 1> matB;
     matB << pos_vec[index[0]](1), pos_vec[index[1]](1), pos_vec[index[2]](1);
-    Eigen::Matrix<Dtype, 3, 1> c = matA.colPivHouseholderQr().solve(matB);
+    Eigen::Matrix<Dtype, 3, 1> c = matA.colPivHouseholderQr().solve(matB); //QR分解 求解方程
 
     int num_inliers = 0;
     Dtype residual = 0;
@@ -164,7 +164,7 @@ bool RansacFitting(const std::vector<Eigen::Matrix<Dtype, 2, 1>>& pos_vec,
       (*coeff)(3) = 0;
       (*coeff)(2) = c(0);
       (*coeff)(1) = c(1);
-      (*coeff)(0) = c(2);
+      (*coeff)(0) = c(2); 
       max_inliers = num_inliers;
       min_residual = residual;
     }
