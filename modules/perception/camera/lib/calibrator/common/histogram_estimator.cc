@@ -47,18 +47,18 @@ void HistogramEstimator::Init(const HistogramEstimatorParams *params) {
   if (params != nullptr) {
     params_ = *params; //HistogramEstimatorParams 默认参数在构造函数中，此处由CalibratorParams中的参数覆盖
   }
-  step_bin_reversed_ = common::IRec(params_.step_bin);
+  step_bin_reversed_ = common::IRec(params_.step_bin); //1/(20/400) = 20 表示每度对应的区间的索引位置
   assert(params_.nr_bins_in_histogram > 0);
   assert(params_.nr_bins_in_histogram <= kMaxNrBins);
   int nr_bins = params_.nr_bins_in_histogram; //400
   memset(hist_.data(), 0, sizeof(uint32_t) * nr_bins);
-  GenerateHat(hist_hat_.data(), nr_bins); //out: hist_hat
+  GenerateHat(hist_hat_.data(), nr_bins); //out: hist_hat 先验直方图形状
 }
 
 bool HistogramEstimator::Process() {
   // smooth histogram - >
   // get peak & check mass ->
-  // shape anlysisi ->
+  // shape anlysis ->
   // update estimates - >
   // final decay
 
@@ -73,7 +73,7 @@ bool HistogramEstimator::Process() {
   int max_index = 0;
   uint32_t mass = 0;
   GetPeakIndexAndMass(hist_smoothed, nr_bins, &max_index, &mass);
-  if (mass < params_.histogram_mass_limit) {
+  if (mass < params_.histogram_mass_limit) { //100
     AERROR << "Fail: lack enough samples.";
     return false;
   }
@@ -84,7 +84,7 @@ bool HistogramEstimator::Process() {
   }
 
   val_estimation_ = GetValFromIndex(max_index);
-  Decay(hist, nr_bins);
+  Decay(hist, nr_bins); //400
 
   return true;
 }
@@ -93,7 +93,7 @@ void HistogramEstimator::Smooth(const uint32_t *hist_input, int nr_bins,
                                 uint32_t *hist_output) {
   assert(nr_bins == params_.nr_bins_in_histogram);
 
-  int filter_radius = params_.smooth_kernel_radius;
+  int filter_radius = params_.smooth_kernel_radius; //2 kernel size为5
   if (filter_radius * 2 > nr_bins) {
     return;
   }
@@ -101,26 +101,26 @@ void HistogramEstimator::Smooth(const uint32_t *hist_input, int nr_bins,
   float weight_sum_kernel = 0.0f;
   for (auto &w : params_.smooth_kernel) {
     weight_sum_kernel += static_cast<float>(w);
-  }
+  } //(1,3,5,3,1)-> 1/13
   float norm_reversed = common::IRec(weight_sum_kernel);
   int sp = 0;
   int ep = 0;
 
-  // left boundary part
+  // left boundary part (0,1) 从核的右半部分开始
   for (int i = 0; i < filter_radius; ++i) {
     uint32_t sum = 0;
     sp = 0;
-    ep = i + filter_radius;
+    ep = i + filter_radius; //(2,3)
     float kernel_sum = 0.0f;
-    for (int j = sp; j <= ep; ++j) {
-      sum += hist_input[j] * params_.smooth_kernel[j - i + filter_radius];
+    for (int j = sp; j <= ep; ++j) {                                      
+      sum += hist_input[j] * params_.smooth_kernel[j - i + filter_radius];//(0 - 0 + 2),(1-0+2),(2-0+2)
       kernel_sum += static_cast<float>(params_.smooth_kernel[j - sp]);
     }
     float scale = common::IRec(kernel_sum);
     hist_output[i] = static_cast<uint32_t>(static_cast<float>(sum) * scale);
   }
 
-  // mid part
+  // mid part 
   for (int i = filter_radius; i < nr_bins - filter_radius; ++i) {
     uint32_t sum = 0;
     sp = i - filter_radius;
@@ -132,7 +132,7 @@ void HistogramEstimator::Smooth(const uint32_t *hist_input, int nr_bins,
         static_cast<uint32_t>(static_cast<float>(sum) * norm_reversed);
   }
 
-  // right boundary part
+  // right boundary part(398,399)
   for (int i = nr_bins - filter_radius; i < nr_bins; ++i) {
     uint32_t sum = 0;
     sp = i - filter_radius;
@@ -155,7 +155,7 @@ void HistogramEstimator::GenerateHat(float *hist_hat, int nr_bins) {
   // max: 1 + hat_min_allowed
   float hat_std_allowed = params_.hat_std_allowed; //6.25
   float hat_min_allowed = params_.hat_min_allowed; //0.40
-  int nr_bins_half = nr_bins >> 1;
+  int nr_bins_half = nr_bins >> 1; //200
   for (int i = 0; i < nr_bins; ++i) {
     float val = static_cast<float>(i - nr_bins_half) / hat_std_allowed;
     hist_hat_[i] = expf(-val * val * 0.5f) + hat_min_allowed;
@@ -168,12 +168,12 @@ bool HistogramEstimator::IsGoodShape(const uint32_t *hist, int nr_bins,
   assert(max_index < params_.nr_bins_in_histogram);
   assert(max_index >= 0);
 
-  uint32_t max_value = hist[max_index];
-  int nr_bins_half = nr_bins >> 1;
+  uint32_t max_value = hist[max_index]; //该pitch对应的统计数
+  int nr_bins_half = nr_bins >> 1; // 200
 
-  int offset = max_index - nr_bins_half;
+  int offset = max_index - nr_bins_half; //该pitch 距离中位值的距离
   int sp = std::max(offset, 0);
-  int ep = std::min(offset + nr_bins, nr_bins);
+  int ep = std::min(offset + nr_bins, nr_bins); //(0,offset + nr_bins) (offset,nr_bins)
 
   for (int i = sp; i < ep; ++i) {
     float hat_val = hist_hat_[i - offset];

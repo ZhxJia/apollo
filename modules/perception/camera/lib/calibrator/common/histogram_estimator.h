@@ -30,10 +30,10 @@ struct HistogramEstimatorParams {
   HistogramEstimatorParams() { Init(); }
   void Init();
 
-  int nr_bins_in_histogram = 0;
+  int nr_bins_in_histogram = 0; //400
   float data_sp = 0.0f;  // start point
-  float data_ep = 0.0f;  // end point => [data_sp, data_ep)
-  float step_bin = 0.0f;
+  float data_ep = 0.0f;  // end point => [data_sp, data_ep)  ->pitch[-10,10]度
+  float step_bin = 0.0f; // ->pitch 20/400 = 0.05度 实际为弧度
 
   std::vector<uint32_t> smooth_kernel = {};
   int smooth_kernel_width = 0;  // only consider odd number
@@ -44,7 +44,7 @@ struct HistogramEstimatorParams {
 
   uint32_t histogram_mass_limit = 0;
 
-  float decay_factor = 0.0f;
+  float decay_factor = 0.0f; //0.8908987
 
   void operator=(const HistogramEstimatorParams &params) {
     nr_bins_in_histogram = params.nr_bins_in_histogram;
@@ -102,11 +102,11 @@ class HistogramEstimator {
       AERROR << params_.data_sp;
       AERROR << params_.data_ep;
       AERROR << val;
-      return false;
+      return false; //(-10,10)度
     }
-    int index = GetIndex(val);
+    int index = GetIndex(val); //过去该pitch对应的histogram的索引
     assert(index >= 0 && index < params_.nr_bins_in_histogram);
-    ++hist_[index];
+    ++hist_[index]; //对应该pitch的直方图索引的数值加1，即用于统计相同pitch的数量
     val_cur_ = val;
     return true;
   }
@@ -134,7 +134,7 @@ class HistogramEstimator {
  private:
   int GetIndex(float val) const {
     return static_cast<int>((val - params_.data_sp) * step_bin_reversed_);
-  }
+  } //(pitch_cur - (-10))  * 20 
 
   float GetValFromIndex(int index) const {
     return (params_.data_sp +
@@ -149,10 +149,10 @@ class HistogramEstimator {
                            uint32_t *mass);
 
   void Decay(uint32_t *hist, int nr_bins) {
-    float df = params_.decay_factor;
+    float df = params_.decay_factor; //0.8908987f
     for (int i = 0; i < nr_bins; ++i) {
       hist[i] = static_cast<uint32_t>(static_cast<float>(hist[i]) * df);
-    }
+    } //将直方图中的计数值衰减
   }
 
   void GenerateHat(float *hist_hat, int nr_bins);
@@ -168,7 +168,7 @@ class HistogramEstimator {
 
   HistogramEstimatorParams params_;
 
-  float step_bin_reversed_ = 0.0f;
+  float step_bin_reversed_ = 0.0f; //每度的step_bin   计算bin所在400的索引
   float val_cur_ = 0.0f;
   float val_estimation_ = 0.0f;
 };

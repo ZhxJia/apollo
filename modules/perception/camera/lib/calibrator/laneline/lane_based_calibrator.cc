@@ -56,8 +56,8 @@ void CalibratorParams::Init() {
   // min_required_straight_driving_distance_in_meter = 40.0f;
 
   // Fast set-up
-  min_distance_to_update_calibration_in_meter = 100.0f;
-  min_required_straight_driving_distance_in_meter = 20.0f; //标定所要求的最低前行距离
+  min_distance_to_update_calibration_in_meter = 100.0f; //更新标定值所要求的前行距离
+  min_required_straight_driving_distance_in_meter = 20.0f; //标定获取消失点所要求的最低前行距离
 
   // Histogram params
   hist_estimator_params.nr_bins_in_histogram = 400;
@@ -68,7 +68,7 @@ void CalibratorParams::Init() {
   hist_estimator_params.step_bin =
       (hist_estimator_params.data_ep - hist_estimator_params.data_sp);
   hist_estimator_params.step_bin /=
-      static_cast<float>(hist_estimator_params.nr_bins_in_histogram);
+      static_cast<float>(hist_estimator_params.nr_bins_in_histogram); // 20/400
 
   hist_estimator_params.smooth_kernel.clear();
   hist_estimator_params.smooth_kernel.push_back(1);
@@ -79,7 +79,7 @@ void CalibratorParams::Init() {
   hist_estimator_params.smooth_kernel_width =
       static_cast<int>(hist_estimator_params.smooth_kernel.size());//5
   hist_estimator_params.smooth_kernel_radius =
-      hist_estimator_params.smooth_kernel_width >> 1; //10
+      hist_estimator_params.smooth_kernel_width >> 1; //2
 
   hist_estimator_params.hat_min_allowed = 0.40f;
   hist_estimator_params.hat_std_allowed = 6.25f;
@@ -162,9 +162,9 @@ bool LaneBasedCalibrator::Process(const EgoLane &lane, const float &velocity,
   if (!GetPitchFromVanishingPoint(vp_work, &pitch_cur_)) {
     AINFO << "Failed to estimate pitch from vanishing point.";
     return false;
-  }
+  } //根据消失点计算pitch
   //  std::cout << "#current pitch: " << pitch_cur_ << std::endl;
-  vanishing_row_ = vp_work.pixel_pos[1];
+  vanishing_row_ = vp_work.pixel_pos[1]; //消失点所在行数
 
   // Get the filtered output using histogram
   if (!AddPitchToHistogram(pitch_cur_)) {
@@ -172,7 +172,7 @@ bool LaneBasedCalibrator::Process(const EgoLane &lane, const float &velocity,
     return false;
   }
 
-  accumulated_straight_driving_in_meter_ += distance_traveled_in_meter;
+  accumulated_straight_driving_in_meter_ += distance_traveled_in_meter; //累加直行距离
   //  std::cout << "acc_d: " << accumulated_straight_driving_in_meter_ << "\n";
   if (accumulated_straight_driving_in_meter_ >
           params_.min_distance_to_update_calibration_in_meter &&
@@ -226,7 +226,7 @@ bool LaneBasedCalibrator::GetPitchFromVanishingPoint(const VanishingPoint &vp,
   if (fabs(yaw_check) > params_.max_allowed_yaw_angle_in_radian) {
     return false;
   }
-  *pitch = static_cast<float>(atan2(vp.pixel_pos[1] - cy, fy));
+  *pitch = static_cast<float>(atan2(vp.pixel_pos[1] - cy, fy)); //消失点为与车道线平行且经过光心的直线与像平面的交点，若认为车道线为水平地面，则可计算pitch
   return true;
 }
 
