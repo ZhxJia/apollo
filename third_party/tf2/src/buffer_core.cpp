@@ -211,7 +211,7 @@ bool BufferCore::setTransform(
   /////// New implementation
   geometry_msgs::TransformStamped stripped = transform_in;
   stripped.header.frame_id = stripSlash(stripped.header.frame_id);
-  stripped.child_frame_id = stripSlash(stripped.child_frame_id);
+  stripped.child_frame_id = stripSlash(stripped.child_frame_id); //删除开头的/
 
   bool error_exists = false;
   if (stripped.child_frame_id == stripped.header.frame_id) {

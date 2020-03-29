@@ -418,13 +418,13 @@ void DarkSCNNLanePostprocessor::ConvertImagePoint2Camera(CameraFrame* frame) {
   int laneline_num = static_cast<int>(lane_objects.size());
   for (int line_index = 0; line_index < laneline_num; ++line_index) {
     std::vector<base::Point2DF>& image_point_set =
-        lane_objects[line_index].curve_image_point_set;
+        lane_objects[line_index].curve_image_point_set; //对应每条车道线
     std::vector<base::Point3DF>& camera_point_set =
         lane_objects[line_index].curve_camera_point_set;
     for (int i = 0; i < static_cast<int>(image_point_set.size()); i++) {
       base::Point3DF camera_point;
       Eigen::Vector3d camera_point3d;
-      const base::Point2DF& image_point = image_point_set[i];
+      const base::Point2DF& image_point = image_point_set[i]; //对应车道线中的每个点
       ImagePoint2Camera(image_point, pitch_angle, camera_ground_height,
                         intrinsic_params_inverse, &camera_point3d);
       camera_point.x = static_cast<float>(camera_point3d(0));
@@ -440,11 +440,11 @@ void DarkSCNNLanePostprocessor::ConvertImagePoint2Camera(CameraFrame* frame) {
 void DarkSCNNLanePostprocessor::PolyFitCameraLaneline(CameraFrame* frame) {
   std::vector<base::LaneLine>& lane_objects = frame->lane_objects;
   int laneline_num = static_cast<int>(lane_objects.size());
-  for (int line_index = 0; line_index < laneline_num; ++line_index) {
+  for (int line_index = 0; line_index < laneline_num; ++line_index) { //对于每一条车道线
     const std::vector<base::Point3DF>& camera_point_set =
         lane_objects[line_index].curve_camera_point_set;
-    // z: longitudinal direction
-    // x: latitudinal direction
+    // z: longitudinal direction 纵向
+    // x: latitudinal direction 横向
     float x_start = camera_point_set[0].z;
     float x_end = 0.0f;
     Eigen::Matrix<float, max_poly_order + 1, 1> camera_coeff;
@@ -455,7 +455,7 @@ void DarkSCNNLanePostprocessor::PolyFitCameraLaneline(CameraFrame* frame) {
       Eigen::Matrix<float, 2, 1> camera_pos;
       camera_pos << camera_point_set[i].z, camera_point_set[i].x;
       camera_pos_vec.push_back(camera_pos);
-    }
+    } //查找车道线的起止点
 
     bool is_x_axis = true;
     bool fit_flag =

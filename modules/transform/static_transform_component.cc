@@ -32,14 +32,14 @@ bool StaticTransformComponent::Init() {
   attr.set_channel_name(FLAGS_tf_static_topic);
   attr.mutable_qos_profile()->CopyFrom(
       cyber::transport::QosProfileConf::QOS_PROFILE_TF_STATIC);
-  writer_ = node_->CreateWriter<TransformStampeds>(attr);
+  writer_ = node_->CreateWriter<TransformStampeds>(attr); //transform.proto
   SendTransforms();
   return true;
 }
 
 void StaticTransformComponent::SendTransforms() {
   std::vector<TransformStamped> tranform_stamped_vec;
-  for (auto& extrinsic_file : conf_.extrinsic_file()) {
+  for (auto& extrinsic_file : conf_.extrinsic_file()) { //对conf/ pb.txt中的所有外参文件遍历
     if (extrinsic_file.enable()) {
       AINFO << "Broadcast static transform, frame id ["
             << extrinsic_file.frame_id() << "], child frame id ["
@@ -99,7 +99,7 @@ void StaticTransformComponent::SendTransform(
       *transform_stampeds_.add_transforms() = *it_in;
     }
   }
-  writer_->Write(std::make_shared<TransformStampeds>(transform_stampeds_));
+  writer_->Write(std::make_shared<TransformStampeds>(transform_stampeds_)); //TransformStampeds 包含了很多TransformStamped
 }
 
 }  // namespace transform

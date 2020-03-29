@@ -217,7 +217,7 @@ bool ImagePoint2Camera(const base::Point2DF& img_point, float pitch_angle,
   if (fabs(rotate_point(1, 0)) < lane_eps_value) {
     return false;
   }
-  float scale = camera_ground_height / rotate_point(1, 0);
+  float scale = camera_ground_height / rotate_point(1, 0); //由相机高度(地平面中的点在相机坐标系下的y坐标)与旋转得到的点的坐标得到尺度因子(齐次坐标的放缩倍数)
   (*camera_point)(0) = scale * org_camera_point(0, 0);
   (*camera_point)(1) = scale * org_camera_point(1, 0);
   (*camera_point)(2) = scale * org_camera_point(2, 0);

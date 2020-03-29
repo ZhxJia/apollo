@@ -34,7 +34,7 @@ int Buffer::Init() {
   attr.set_channel_name("/tf");
   message_subscriber_tf_ = node_->CreateReader<TransformStampeds>(
       attr, [&](const std::shared_ptr<const TransformStampeds>& msg_evt) {
-        SubscriptionCallbackImpl(msg_evt, false);
+        SubscriptionCallbackImpl(msg_evt, false); //lambda 函数[&]表示引用捕获
       });
 
   apollo::cyber::proto::RoleAttributes attr_static;
@@ -150,7 +150,7 @@ TransformStamped Buffer::lookupTransform(const std::string& target_frame,
   geometry_msgs::TransformStamped tf2_trans_stamped =
       lookupTransform(target_frame, source_frame, tf2_time);
   TransformStamped trans_stamped;
-  TF2MsgToCyber(tf2_trans_stamped, trans_stamped);
+  TF2MsgToCyber(tf2_trans_stamped, trans_stamped);//将tf2消息转换为protobuf格式
   return trans_stamped;
 }
 
@@ -179,8 +179,8 @@ bool Buffer::canTransform(const std::string& target_frame,
       cyber::Time::Now().ToNanosecond() < start_time + timeout_ns &&
       !canTransform(target_frame, source_frame, time.ToNanosecond(), errstr) &&
       !cyber::IsShutdown()) {
-    usleep(3000);
-  }
+    usleep(3000);//使线程挂起3000us
+  } //在timeout_ns时间内一直都找不到有效transform,则放弃
   bool retval =
       canTransform(target_frame, source_frame, time.ToNanosecond(), errstr);
   // conditionally_append_timeout_info(errstr, start_time, timeout);

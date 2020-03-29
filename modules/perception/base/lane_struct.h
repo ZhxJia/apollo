@@ -78,7 +78,7 @@ struct LaneLine {
   // @brief curve image point set
   std::vector<Point2DF> curve_image_point_set; //点存储顺序由近及远
   // @brief curve camera point set
-  std::vector<Point3DF> curve_camera_point_set;
+  std::vector<Point3DF> curve_camera_point_set; // Process 3D
   // @brief curve car coord point set, only on XY plane
   std::vector<Point2DF> curve_car_coord_point_set;
   // @brief image end point set

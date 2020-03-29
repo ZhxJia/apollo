@@ -21,7 +21,7 @@ message RoleAttributes {
     optional string message_type = 8;
     optional bytes proto_desc = 9;
     optional uint64 id = 10;
-    optional QosProfile qos_profile = 11;
+    optional QosProfile qos_profile = 11;  // depth: used to define capacity of processed messages
     optional SocketAddr socket_addr = 12;  // reserved for socket communication
     // especially for SERVER and CLIENT
     optional string service_name = 13;

@@ -53,7 +53,7 @@ class TransformCache {
   inline void SetCacheDuration(double duration) { cache_duration_ = duration; }
 
  protected:
-  // in ascending order of time
+  // in ascending order of time 
   std::deque<StampedTransform> transforms_;
   double cache_duration_ = 1.0;
 };
@@ -85,6 +85,7 @@ class TransformWrapper {
                                Eigen::Affine3d* trans);
 
  protected:
+   //内部函数 封装了buffer中的canTransform,lookupTransform
   bool QueryTrans(double timestamp, StampedTransform* trans,
                   const std::string& frame_id,
                   const std::string& child_frame_id);
@@ -92,7 +93,7 @@ class TransformWrapper {
  private:
   bool inited_ = false;
 
-  Buffer* tf2_buffer_ = Buffer::Instance();
+  Buffer* tf2_buffer_ = Buffer::Instance(); //BUffer 是单例模式
 
   std::string sensor2novatel_tf2_frame_id_;
   std::string sensor2novatel_tf2_child_frame_id_;

@@ -76,7 +76,7 @@ bool TransformCache::QueryTransform(double timestamp,
 
   int size = static_cast<int>(transforms_.size());
   if (size == 1) {
-    (*transform) = transforms_.back();
+    (*transform) = transforms_.back(); //按时间升序
     transform->timestamp = timestamp;
     AINFO << "use transform at " << std::to_string(transforms_.back().timestamp)
           << " for " << std::to_string(timestamp);
@@ -86,7 +86,7 @@ bool TransformCache::QueryTransform(double timestamp,
         (transforms_[size - 1].timestamp - transforms_[size - 2].timestamp);
 
     transform->rotation = transforms_[size - 2].rotation.slerp(
-        ratio, transforms_[size - 1].rotation);
+        ratio, transforms_[size - 1].rotation); //四元数插值
 
     transform->translation.x() =
         transforms_[size - 2].translation.x() * (1 - ratio) +
@@ -169,7 +169,7 @@ bool TransformWrapper::GetSensor2worldTrans(
     }
   } else if (FLAGS_obs_enable_local_pose_extrapolation) {
     transform_cache_.AddTransform(trans_novatel2world);
-  }
+  } //获取novatel2world的外参,首先查询Buffer，若没有有效的transform,则通过transform_cache中的历史信息进行推断
 
   novatel2world =
       trans_novatel2world.translation * trans_novatel2world.rotation;
@@ -219,7 +219,7 @@ bool TransformWrapper::QueryTrans(double timestamp, StampedTransform* trans,
   cyber::Time query_time(timestamp);
   std::string err_string;
   if (!tf2_buffer_->canTransform(frame_id, child_frame_id, query_time,
-                                 static_cast<float>(FLAGS_obs_tf2_buff_size),
+                                 static_cast<float>(FLAGS_obs_tf2_buff_size), //查询10ms
                                  &err_string)) {
     AERROR << "Can not find transform. " << std::to_string(timestamp)
            << " frame_id: " << frame_id << " child_frame_id: " << child_frame_id
