@@ -774,7 +774,7 @@ bool UsbCam::read_frame(CameraImagePtr raw_image) {
   unsigned int i = 0;
   int len = 0;
 
-  switch (config_->io_method()) {
+  switch (config_->io_method()) { //IO_METHOD_MMAP
     case IO_METHOD_READ:
       len = static_cast<int>(read(fd_, buffers_[0].start, buffers_[0].length));
 
@@ -838,14 +838,14 @@ bool UsbCam::read_frame(CameraImagePtr raw_image) {
           double diff =
               static_cast<double>(camera_timestamp - last_nsec_) / 1e9;
           // drop image by frame_rate
-          if (diff < frame_drop_interval_) {
+          if (diff < frame_drop_interval_) { //0.9*正常帧间隔
             AINFO << "drop image:" << camera_timestamp;
             if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf)) {
               AERROR << "VIDIOC_QBUF ERROR";
             }
             return false;
           }
-          if (frame_warning_interval_ < diff) {
+          if (frame_warning_interval_ < diff) { //1.5*正常帧间隔
             AWARN << "stamp jump.last stamp:" << last_nsec_
                   << " current stamp:" << camera_timestamp;
           }

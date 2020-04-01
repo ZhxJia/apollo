@@ -588,7 +588,7 @@ int FusionCameraDetectionComponent::InitProjectMatrix() {
 int FusionCameraDetectionComponent::InitCameraListeners() {
   for (size_t i = 0; i < camera_names_.size(); ++i) {
     const std::string &camera_name = camera_names_[i];//"front_6mm,front_12mm"
-    const std::string &channel_name = input_camera_channel_names_[i];//"/sensor/camera/traffic/image_short,/sensor/camera/obstacle/image_narrow"
+    const std::string &channel_name = input_camera_channel_names_[i];//"/apollo/sensor/camera/front_6mm/image,/apollo/sensor/camera/front_12mm/image"
     const std::string &listener_name = camera_name + "_fusion_camera_listener";
     AINFO << "listener name: " << listener_name;
 

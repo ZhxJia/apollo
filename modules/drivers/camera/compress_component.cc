@@ -35,7 +35,7 @@ bool CompressComponent::Init() {
   AINFO << "Camera config: \n" << config_.DebugString();
   try {
     image_pool_.reset(new CCObjectPool<CompressedImage>(
-        config_.compress_conf().image_pool_size()));
+        config_.compress_conf().image_pool_size())); //100
     image_pool_->ConstructAll();
   } catch (const std::bad_alloc& e) {
     AERROR << e.what();
@@ -58,7 +58,7 @@ bool CompressComponent::Proc(const std::shared_ptr<Image>& image) {
   std::vector<int> params;
   params.resize(3, 0);
   params[0] = CV_IMWRITE_JPEG_QUALITY;
-  params[1] = 95;
+  params[1] = 95; //设置图像质量 100表示不压缩
 
   try {
     cv::Mat mat_image(image->height(), image->width(), CV_8UC3,

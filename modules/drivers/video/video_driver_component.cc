@@ -35,7 +35,7 @@ bool CompCameraH265Compressed::Init() {
   AINFO << "Velodyne config: " << video_config.DebugString();
 
   camera_deivce_.reset(new CameraDriver(&video_config));
-  camera_deivce_->Init();
+  camera_deivce_->Init(); //初始化UDP端口和socket套接口的描述字
 
   if (camera_deivce_->Record()) {
     // Use current directory to save record file if H265_SAVE_FOLDER environment
@@ -44,8 +44,8 @@ bool CompCameraH265Compressed::Init() {
     AINFO << "Record folder: " << record_folder_;
 
     struct stat st;
-    if (stat(record_folder_.c_str(), &st) < 0) {
-      bool ret = EnsureDirectory(record_folder_);
+    if (stat(record_folder_.c_str(), &st) < 0) { //获取文件信息，执行成功则返回0，否则返回-1
+      bool ret = EnsureDirectory(record_folder_); //创建文件
       AINFO_IF(ret) << "Record folder is created successfully.";
     }
   }
@@ -68,7 +68,7 @@ void CompCameraH265Compressed::VideoPoll() {
   if (camera_deivce_->Record()) {
     char name[256];
     snprintf(name, sizeof(name), "%s/encode_%d.h265", record_folder_.c_str(),
-             camera_deivce_->Port());
+             camera_deivce_->Port()); //格式化文件名称为name
     AINFO << "Output file: " << name;
     fout.open(name, std::ios::binary);
     if (!fout.good()) {

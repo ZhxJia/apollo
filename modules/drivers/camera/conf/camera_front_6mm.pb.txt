@@ -18,7 +18,7 @@ auto_exposure: true
 exposure: 100
 auto_white_balance: true
 white_balance: 4000
-bytes_per_pixel: 2
+bytes_per_pixel: 2 #yuyv格式一个像素2个字节
 trigger_internal: 0
 trigger_fps: 20
 channel_name: "/apollo/sensor/camera/front_6mm/image"
