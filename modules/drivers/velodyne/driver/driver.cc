@@ -37,7 +37,7 @@ VelodyneDriver::~VelodyneDriver() {
 }
 
 void VelodyneDriver::Init() {
-  double frequency = (config_.rpm() / 60.0);  // expected Hz rate
+  double frequency = (config_.rpm() / 60.0);  // expected Hz rate 600 /60 = 10hz
 
   // default number of packets for each scan is a single revolution
   // (fractions rounded up)
