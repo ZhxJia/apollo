@@ -55,13 +55,13 @@ bool PriSecFusionComponent::Proc(
           ++itr;
         } else {
           Fusion(target, source);
-          itr = fusion_readers.erase(itr);
+          itr = fusion_readers.erase(itr); //融合完一个lidar则将其剔除，在查询融合其余的lidar
         }
       } else {
         ++itr;
       }
     }
-    usleep(USLEEP_INTERVAL);
+    usleep(USLEEP_INTERVAL);//5000us
   }
   fusion_writer_->Write(target);
 

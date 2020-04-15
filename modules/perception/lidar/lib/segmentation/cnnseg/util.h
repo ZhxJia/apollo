@@ -38,7 +38,7 @@ inline int F2I(float val, float ori, float scale) {
 inline void GroupPc2Pixel(float pc_x, float pc_y, float scale, float range,
                           int* x, int* y) {
   float fx = (range - (0.707107f * (pc_x + pc_y))) * scale;
-  float fy = (range - (0.707107f * (pc_x - pc_y))) * scale;
+  float fy = (range - (0.707107f * (pc_x - pc_y))) * scale; //进行旋转和平移
   *x = fx < 0 ? -1 : static_cast<int>(fx);
   *y = fy < 0 ? -1 : static_cast<int>(fy);
 }

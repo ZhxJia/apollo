@@ -120,7 +120,7 @@ void FeatureGenerator::GenerateCPU(const base::PointFCloudPtr& pc_ptr,
   // fill initial value for feature blob
   const int map_size = height_ * width_;
   for (int i = 0; i < map_size; ++i) {
-    max_height_data_[i] = -5.f;
+    max_height_data_[i] = -5.f; //MapPointToGrid时仅考虑了-5到5m之内的点云
   }
   memset(mean_height_data_, 0, map_size * sizeof(float));
   memset(count_data_, 0, map_size * sizeof(float));
@@ -133,7 +133,7 @@ void FeatureGenerator::GenerateCPU(const base::PointFCloudPtr& pc_ptr,
   // compute features
   for (size_t i = 0; i < pc_ptr->size(); ++i) {
     int idx = point2grid[i];
-    if (idx == -1) {
+    if (idx == -1) { //表示不位于range范围内的点
       continue;
     }
     const auto& pt = pc_ptr->at(i);
@@ -141,7 +141,7 @@ void FeatureGenerator::GenerateCPU(const base::PointFCloudPtr& pc_ptr,
     float pi = pt.intensity / 255.0f;
     if (max_height_data_[idx] < pz) {
       max_height_data_[idx] = pz;
-      if (use_intensity_feature_) {
+      if (use_intensity_feature_) { //默认false
         top_intensity_data_[idx] = pi;
       }
     }
@@ -149,7 +149,7 @@ void FeatureGenerator::GenerateCPU(const base::PointFCloudPtr& pc_ptr,
     if (use_intensity_feature_) {
       mean_intensity_data_[idx] += static_cast<float>(pi);
     }
-    count_data_[idx] += 1.f;
+    count_data_[idx] += 1.f; //记录每个网格中对应点的个数
   }
 
   for (int i = 0; i < map_size; ++i) {
@@ -162,7 +162,7 @@ void FeatureGenerator::GenerateCPU(const base::PointFCloudPtr& pc_ptr,
       }
       nonempty_data_[i] = 1.f;
     }
-    count_data_[i] = LogCount(static_cast<int>(count_data_[i]));
+    count_data_[i] = LogCount(static_cast<int>(count_data_[i])); //取对数作为网格中点的密度度量特征 参考论文 MV3D中Bird’s Eye View Representation.
   }
 }
 

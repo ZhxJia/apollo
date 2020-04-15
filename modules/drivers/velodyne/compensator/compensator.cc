@@ -136,7 +136,7 @@ void Compensator::MotionCompensation(
       pose_min_time.translation() - pose_max_time.translation();
   Eigen::Quaterniond q_max(pose_max_time.linear());
   Eigen::Quaterniond q_min(pose_min_time.linear());
-  Eigen::Quaterniond q1(q_max.conjugate() * q_min);
+  Eigen::Quaterniond q1(q_max.conjugate() * q_min); //共轭表示旋转轴不变，方向角相反 此处得到q_min时刻到q_max时刻的lidar在世界坐标系下旋转角
   Eigen::Quaterniond q0(Eigen::Quaterniond::Identity());
   q1.normalize();
   translation = q_max.conjugate() * translation;
@@ -144,15 +144,15 @@ void Compensator::MotionCompensation(
   // int total = msg->width * msg->height;
 
   double d = q0.dot(q1);
-  double abs_d = abs(d);
-  double f = 1.0 / static_cast<double>(timestamp_max - timestamp_min);
+  double abs_d = abs(d); //标量对应角的余弦
+  double f = 1.0 / static_cast<double>(timestamp_max - timestamp_min); //帧率
 
   // Threshold for a "significant" rotation from min_time to max_time:
   // The LiDAR range accuracy is ~2 cm. Over 70 meters range, it means an angle
   // of 0.02 / 70 =
   // 0.0003 rad. So, we consider a rotation "significant" only if the scalar
   // part of quaternion is
-  // less than cos(0.0003 / 2) = 1 - 1e-8.
+  // less than cos(0.0003 / 2) = 1 - 1e-8. lidar测距精度2cm,超出70m 根据弧度近似alpha = l/r 角度应小于0.0003弧度
   if (abs_d < 1.0 - 1.0e-8) {
     double theta = acos(abs_d);
     double sin_theta = sin(theta);
@@ -173,7 +173,7 @@ void Compensator::MotionCompensation(
       Eigen::Vector3d p(x_scalar, y_scalar, z_scalar);
 
       uint64_t tp = point.timestamp();
-      double t = static_cast<double>(timestamp_max - tp) * f;
+      double t = static_cast<double>(timestamp_max - tp) * f; //插值
 
       Eigen::Translation3d ti(t * translation);
 

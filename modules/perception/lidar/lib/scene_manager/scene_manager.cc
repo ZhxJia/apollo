@@ -43,7 +43,7 @@ bool SceneManager::InitInternal(const SceneManagerInitOptions& options) {
   SceneManagerConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
   services_.clear();
-  for (int i = 0; i < config.service_name_size(); ++i) {
+  for (int i = 0; i < config.service_name_size(); ++i) { //GroundService  ROIService
     const auto& name = config.service_name(i);
     SceneServicePtr service(SceneServiceRegisterer::GetInstanceByName(name));
     if (service == nullptr) {

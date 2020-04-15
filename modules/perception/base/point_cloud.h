@@ -252,7 +252,7 @@ class PointCloud {
 };
 
 // @brief Point cloud class split points and attributes storage
-// for fast traversing
+// for fast traversing 将点云的属性和点拆分 便于快速访问
 template <class PointT>
 class AttributePointCloud : public PointCloud<PointT> {
  public:

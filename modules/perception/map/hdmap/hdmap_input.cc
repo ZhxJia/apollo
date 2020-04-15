@@ -136,8 +136,8 @@ bool HDMapInput::GetRoiHDMapStruct(
                                      hdmap_struct_ptr->junction_polygons,
                                      &(hdmap_struct_ptr->road_boundary));
   return true;
-}
 
+}
 void HDMapInput::MergeBoundaryJunction(
     const std::vector<apollo::hdmap::RoadRoiPtr>& boundary,
     const std::vector<apollo::hdmap::JunctionInfoConstPtr>& junctions,
@@ -234,7 +234,7 @@ bool HDMapInput::GetRoadBoundaryFilteredByJunctions(
     std::vector<base::PolygonDType> temp_right_boundary_vec;
     // Filter left boundary points
     this->SplitBoundary(temp_road_boundary.left_boundary, junctions,
-                        &temp_left_boundary_vec);
+                        &temp_left_boundary_vec); //根据junctions的边界过滤left_boundary
     // Filter right boundary points
     this->SplitBoundary(temp_road_boundary.right_boundary, junctions,
                         &temp_right_boundary_vec);
@@ -320,13 +320,13 @@ void HDMapInput::SplitBoundary(
   }
   std::vector<int> line_index;
   base::PolygonDType temp_line;
-  for (size_t i = 1; i < boundary_flag.size(); ++i) {
+  for (size_t i = 1; i < boundary_flag.size(); ++i) { //判断边界线
     if (!boundary_flag[i - 1] || !boundary_flag[i]) {
       line_index.push_back(static_cast<int>(i - 1));
       line_index.push_back(static_cast<int>(i));
     } else if (line_index.size() > 1) {
-      auto pos = std::unique(line_index.begin(), line_index.end());
-      line_index.erase(pos, line_index.end());
+      auto pos = std::unique(line_index.begin(), line_index.end()); //相邻元素去重 返回值为去充值后的尾指针
+      line_index.erase(pos, line_index.end()); //获得去重之后的line_index
       for (size_t j = 0; j < line_index.size(); ++j) {
         const PointD& pointd = boundary_line[line_index[j]];
         temp_line.push_back(pointd);

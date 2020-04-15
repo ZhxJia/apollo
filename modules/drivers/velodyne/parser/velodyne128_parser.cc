@@ -98,7 +98,7 @@ void Velodyne128Parser::Unpack(const VelodynePacket& pkt,
       in the interesting defined area (min_angle < area < max_angle)*/
     for (int j = 0, k = 0; j < SCANS_PER_BLOCK; j++, k += RAW_SCAN_SIZE) {
       uint8_t group = static_cast<uint8_t>(block % 4);
-      uint8_t chan_id = static_cast<uint8_t>(j + group * 32);
+      uint8_t chan_id = static_cast<uint8_t>(j + group * 32); //对应激光束的id
       uint8_t firing_order = chan_id / 8;
       firing_order = 0;
       LaserCorrection& corrections = calibration_.laser_corrections_[chan_id];

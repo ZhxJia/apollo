@@ -58,11 +58,11 @@ bool CNNSegmentation::Init(const SegmentationInitOptions& options) {
 
   // init feature parameters
   const FeatureParam& feature_param = cnnseg_param_.feature_param();
-  range_ = feature_param.point_cloud_range();
-  width_ = feature_param.width();
-  height_ = feature_param.height();
-  min_height_ = feature_param.min_height();
-  max_height_ = feature_param.max_height();
+  range_ = feature_param.point_cloud_range(); #90
+  width_ = feature_param.width(); #864
+  height_ = feature_param.height(); #864
+  min_height_ = feature_param.min_height(); #-5.0
+  max_height_ = feature_param.max_height(); # 5.0
 
   // init inference model
   const NetworkParam& network_param = cnnseg_param_.network_param();
@@ -149,7 +149,7 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
   // init spp engine
   SppParams params;
   params.height_gap = spp_engine_config_.height_gap();
-  params.confidence_range = cnnseg_param_.confidence_range();
+  params.confidence_range = cnnseg_param_.confidence_range(); //854f
 
   // init spp data
   auto& spp_data = spp_engine_.GetSppData();
@@ -157,10 +157,10 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
   spp_data.category_pt_blob = category_pt_blob_.get();
   spp_data.confidence_pt_blob = confidence_pt_blob_.get();
 
-  spp_data.objectness_threshold = cnnseg_param_.objectness_thresh();
-  spp_data.confidence_threshold = cnnseg_param_.confidence_thresh();
-  spp_data.top_z_threshold = cnnseg_param_.height_thresh();
-  spp_data.class_num = static_cast<size_t>(MetaType::MAX_META_TYPE);
+  spp_data.objectness_threshold = cnnseg_param_.objectness_thresh(); //0.5
+  spp_data.confidence_threshold = cnnseg_param_.confidence_thresh(); //0.1
+  spp_data.top_z_threshold = cnnseg_param_.height_thresh(); //0.5
+  spp_data.class_num = static_cast<size_t>(MetaType::MAX_META_TYPE); //5
   if (height_pt_blob_ != nullptr) {
     spp_data.height_pt_blob = height_pt_blob_.get();
   }
@@ -173,18 +173,18 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
   spp_data.MakeReference(width_, height_, range_);
 
   // init spp engine
-  spp_engine_.Init(width_, height_, range_, params, sensor_name_);
+  spp_engine_.Init(width_, height_, range_, params, sensor_name_); //90 864 864 
 
   roi_cloud_ = base::PointFCloudPool::Instance().Get();
   roi_world_cloud_ = base::PointDCloudPool::Instance().Get();
 
-  // init thread worker
+  // init thread worker  线程函数绑定
   worker_.Bind([&]() {
     Timer timer;
     ROIFilterOptions roi_filter_options;
     AINFO << "before roi filter";
     if (lidar_frame_ref_->hdmap_struct != nullptr &&
-        roi_filter_->Filter(roi_filter_options, lidar_frame_ref_)) {
+        roi_filter_->Filter(roi_filter_options, lidar_frame_ref_)) {  //存在hdmap输入
       roi_cloud_->CopyPointCloud(*lidar_frame_ref_->cloud,
                                  lidar_frame_ref_->roi_indices);
       roi_world_cloud_->CopyPointCloud(*lidar_frame_ref_->world_cloud,
@@ -223,16 +223,16 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
 
 void CNNSegmentation::MapPointToGrid(
     const std::shared_ptr<AttributePointCloud<PointF>>& pc_ptr) {
-  float inv_res_x = 0.5f * static_cast<float>(width_) / range_;
+  float inv_res_x = 0.5f * static_cast<float>(width_) / range_; // 864/90*0.5 =4.8 每米对应的格数
   // float inv_res_y = 0.5 * static_cast<float>(height_) / range_;
-  point2grid_.assign(pc_ptr->size(), -1);
+  point2grid_.assign(pc_ptr->size(), -1); //point2grid_点云中点的一维索引初始化为-1
   int pos_x = -1;
   int pos_y = -1;
   for (size_t i = 0; i < pc_ptr->size(); ++i) {
     const auto& pt = pc_ptr->at(i);
     if (pt.z <= min_height_ || pt.z >= max_height_) {
       continue;
-    }
+    }//过滤高度不在-5到5内的点
     // the coordinates of x and y are exchanged here
     // (row <-> x, column <-> y)
     // int pos_x = F2I(pt.y, range_, inv_res_x);  // col

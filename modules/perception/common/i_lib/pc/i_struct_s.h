@@ -607,8 +607,8 @@ bool VoxelGridXY<T>::Alloc(unsigned int nr_voxel_x, unsigned int nr_voxel_y,
     initialized_ = false;
     return initialized_;
   }
-  nr_voxel_x_ = nr_voxel_x;
-  nr_voxel_y_ = nr_voxel_y;
+  nr_voxel_x_ = nr_voxel_x; //256
+  nr_voxel_y_ = nr_voxel_y; //256
 
   unsigned int i, j, k, n = 0;
   unsigned int nr_voxel_xy = (nr_voxel_x_ * nr_voxel_y_);
@@ -620,8 +620,8 @@ bool VoxelGridXY<T>::Alloc(unsigned int nr_voxel_x, unsigned int nr_voxel_y,
   voxels_.resize(nr_voxel);
 
   // voxel grid dimesion is forced to be the manual input
-  dim_x_[0] = spatial_bound_x_min;
-  dim_x_[1] = spatial_bound_x_max;
+  dim_x_[0] = spatial_bound_x_min; //-120
+  dim_x_[1] = spatial_bound_x_max; //120
 
   dim_y_[0] = spatial_bound_y_min;
   dim_y_[1] = spatial_bound_y_max;
@@ -635,7 +635,7 @@ bool VoxelGridXY<T>::Alloc(unsigned int nr_voxel_x, unsigned int nr_voxel_y,
 
   assert(span_x > 0 && span_y > 0 && span_z > 0);
 
-  voxel_dim_[0] = voxel_width_x = IDiv(span_x, static_cast<int>(nr_voxel_x_));
+  voxel_dim_[0] = voxel_width_x = IDiv(span_x, static_cast<int>(nr_voxel_x_)); //240/256
   voxel_dim_[1] = voxel_width_y = IDiv(span_y, static_cast<int>(nr_voxel_y_));
   voxel_dim_[2] = voxel_width_z = span_z;
 

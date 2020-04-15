@@ -142,7 +142,7 @@ int VelodyneDriver::PollStandard(std::shared_ptr<VelodyneScan> scan) {
             scan->firing_pkts_size() < config_.npackets()) ||
            (!config_.is_main_frame() && sync_counter == last_count_))) ||
          (!config_.use_poll_sync() &&
-          scan->firing_pkts_size() < config_.npackets())) {
+          scan->firing_pkts_size() < config_.npackets())) { //npackets =20
     while (true) {
       // keep reading until full packet received
       VelodynePacket* packet = scan->add_firing_pkts();

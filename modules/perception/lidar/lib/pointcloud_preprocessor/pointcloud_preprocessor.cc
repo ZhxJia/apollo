@@ -72,15 +72,15 @@ bool PointCloudPreprocessor::Preprocess(
     frame->cloud = base::PointFCloudPool::Instance().Get();
   }
   if (frame->world_cloud == nullptr) {
-    frame->world_cloud = base::PointDCloudPool::Instance().Get();
+    frame->world_cloud = base::PointDCloudPool::Instance().Get(); //从点云对象池中获取实例
   }
   frame->cloud->set_timestamp(message->measurement_time());
   if (message->point_size() > 0) {
     frame->cloud->reserve(message->point_size());
     base::PointF point;
-    for (int i = 0; i < message->point_size(); ++i) {
+    for (int i = 0; i < message->point_size(); ++i) { //遍历message中的所有点
       const apollo::drivers::PointXYZIT& pt = message->point(i);
-      if (filter_naninf_points_) {
+      if (filter_naninf_points_) { //配置文件中为false
         if (std::isnan(pt.x()) || std::isnan(pt.y()) || std::isnan(pt.z())) {
           continue;
         }
@@ -92,14 +92,14 @@ bool PointCloudPreprocessor::Preprocess(
       }
       Eigen::Vector3d vec3d_lidar(pt.x(), pt.y(), pt.z());
       Eigen::Vector3d vec3d_novatel =
-          options.sensor2novatel_extrinsics * vec3d_lidar;
+          options.sensor2novatel_extrinsics * vec3d_lidar; //将点云坐标由lidar坐标系转移到novatel坐标系下
       if (filter_nearby_box_points_ && vec3d_novatel[0] < box_forward_x_ &&
           vec3d_novatel[0] > box_backward_x_ &&
           vec3d_novatel[1] < box_forward_y_ &&
-          vec3d_novatel[1] > box_backward_y_) {
+          vec3d_novatel[1] > box_backward_y_) { // -2<x<2  -5<y <3 的点过滤
         continue;
       }
-      if (filter_high_z_points_ && pt.z() > z_threshold_) {
+      if (filter_high_z_points_ && pt.z() > z_threshold_) { // z>5.0 高度大于5.0米的过滤
         continue;
       }
       point.x = pt.x();
@@ -107,7 +107,7 @@ bool PointCloudPreprocessor::Preprocess(
       point.z = pt.z();
       point.intensity = static_cast<float>(pt.intensity());
       frame->cloud->push_back(point, static_cast<double>(pt.timestamp()) * 1e-9,
-                              FLT_MAX, i, 0);
+                              FLT_MAX, i, 0); //点,时间戳,高度,点的索引,标签
     }
     TransformCloud(frame->cloud, frame->lidar2world_pose, frame->world_cloud);
   }

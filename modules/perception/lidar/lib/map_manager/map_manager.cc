@@ -39,8 +39,8 @@ bool MapManager::Init(const MapManagerInitOptions& options) {
   config_file = GetAbsolutePath(config_file, "map_manager.conf");
   MapManagerConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  update_pose_ = config.update_pose();
-  roi_search_distance_ = config.roi_search_distance();
+  update_pose_ = config.update_pose(); //False
+  roi_search_distance_ = config.roi_search_distance(); //120.0,
   hdmap_input_ = map::HDMapInput::Instance();
   if (!hdmap_input_->Init()) {
     AINFO << "Failed to init hdmap input.";
@@ -67,7 +67,7 @@ bool MapManager::Update(const MapManagerOptions& options, LidarFrame* frame) {
     }
   }
   base::PointD point;
-  point.x = frame->lidar2world_pose.translation()(0);
+  point.x = frame->lidar2world_pose.translation()(0); //提取位移矩阵
   point.y = frame->lidar2world_pose.translation()(1);
   point.z = frame->lidar2world_pose.translation()(2);
   if (!hdmap_input_->GetRoiHDMapStruct(point, roi_search_distance_,

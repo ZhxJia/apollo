@@ -45,7 +45,7 @@ bool VelodyneConvertComponent::Init() {
       AERROR << "fail to getobject, i: " << i;
       return false;
     }
-    point_cloud->mutable_point()->Reserve(140000);
+    point_cloud->mutable_point()->Reserve(140000); //140000个点
   }
   AINFO << "Point cloud comp convert init success";
   return true;

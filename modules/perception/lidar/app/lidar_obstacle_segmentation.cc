@@ -31,7 +31,7 @@ bool LidarObstacleSegmentation::Init(
   auto& sensor_name = options.sensor_name;
   auto config_manager = lib::ConfigManager::Instance();
   const lib::ModelConfig* model_config = nullptr;
-  CHECK(config_manager->GetModelConfig(Name(), &model_config));
+  CHECK(config_manager->GetModelConfig(Name(), &model_config)); //`production/conf/perception/lidar/modules/lidar_obstacle_pipeline.config`
 
   const std::string work_root = config_manager->work_root();
   std::string config_file;
@@ -44,9 +44,9 @@ bool LidarObstacleSegmentation::Init(
 
   LidarObstacleSegmentationConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  segmentor_name_ = config.segmentor();
-  use_map_manager_ = config.use_map_manager();
-  use_object_filter_bank_ = config.use_object_filter_bank();
+  segmentor_name_ = config.segmentor(); //CNNSegmentation
+  use_map_manager_ = config.use_map_manager(); //true
+  use_object_filter_bank_ = config.use_object_filter_bank(); //true
 
   use_map_manager_ = use_map_manager_ && options.enable_hdmap_input;
 

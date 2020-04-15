@@ -49,21 +49,21 @@ bool HdmapROIFilter::Init(const ROIFilterInitOptions& options) {
   config_file = GetAbsolutePath(config_file, "hdmap_roi_filter.conf");
   HDMapRoiFilterConfig config;
   CHECK(apollo::cyber::common::GetProtoFromFile(config_file, &config));
-  range_ = config.range();
-  cell_size_ = config.cell_size();
-  extend_dist_ = config.extend_dist();
-  no_edge_table_ = config.no_edge_table();
-  set_roi_service_ = config.set_roi_service();
+  range_ = config.range(); //120
+  cell_size_ = config.cell_size(); //0.25
+  extend_dist_ = config.extend_dist(); //0.0
+  no_edge_table_ = config.no_edge_table(); //false
+  set_roi_service_ = config.set_roi_service(); //true
 
   // reserve mem
   const size_t KPolygonMaxNum = 100;
-  polygons_world_.reserve(KPolygonMaxNum);
+  polygons_world_.reserve(KPolygonMaxNum); //多边形个数
   polygons_local_.reserve(KPolygonMaxNum);
 
   // init bitmap
-  Eigen::Vector2d min_range(-range_, -range_);
+  Eigen::Vector2d min_range(-range_, -range_); //-120
   Eigen::Vector2d max_range(range_, range_);
-  Eigen::Vector2d cell_size(cell_size_, cell_size_);
+  Eigen::Vector2d cell_size(cell_size_, cell_size_); //0.25
   bitmap_.Init(min_range, max_range, cell_size);
 
   // output input parameters

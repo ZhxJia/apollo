@@ -51,15 +51,15 @@ bool SpatioTemporalGroundDetector::Init(
   CHECK(GetProtoFromFile(config_file, &config_params))
       << "Failed to parse SpatioTemporalGroundDetectorConfig config file.";
   ground_thres_ = config_params.ground_thres();
-  use_roi_ = config_params.use_roi();
-  use_ground_service_ = config_params.use_ground_service();
+  use_roi_ = config_params.use_roi(); //false
+  use_ground_service_ = config_params.use_ground_service(); //true
 
   param_ = new common::PlaneFitGroundDetectorParam;
-  param_->roi_region_rad_x = config_params.roi_rad_x();
-  param_->roi_region_rad_y = config_params.roi_rad_y();
-  param_->roi_region_rad_z = config_params.roi_rad_z();
-  param_->nr_grids_coarse = config_params.grid_size();
-  param_->nr_smooth_iter = config_params.nr_smooth_iter();
+  param_->roi_region_rad_x = config_params.roi_rad_x(); //120.0,
+  param_->roi_region_rad_y = config_params.roi_rad_y(); //120
+  param_->roi_region_rad_z = config_params.roi_rad_z(); //120
+  param_->nr_grids_coarse = config_params.grid_size(); //16
+  param_->nr_smooth_iter = config_params.nr_smooth_iter(); //5
 
   pfdetector_ = new common::PlaneFitGroundDetector(*param_);
   pfdetector_->Init();

@@ -83,7 +83,7 @@ class SensorManager {
   std::unordered_map<std::string, std::shared_ptr<BaseCameraModel>>
       undistort_model_map_;
 
-  DECLARE_SINGLETON(SensorManager)//jac!!20/1/7:单例模式 =w 具体实现方法回头看一下
+  DECLARE_SINGLETON(SensorManager)//jac!!20/1/7:单例模式 整个程序只有一个SensorManager 负责管理所有的传感器
 };
 
 }  // namespace common

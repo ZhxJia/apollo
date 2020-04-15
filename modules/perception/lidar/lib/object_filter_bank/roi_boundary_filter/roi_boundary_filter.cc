@@ -40,10 +40,10 @@ bool ROIBoundaryFilter::Init(const ObjectFilterInitOptions& options) {
   config_file = GetAbsolutePath(config_file, "roi_boundary_filter.conf");
   ROIBoundaryFilterConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  distance_to_boundary_threshold_ = config.distance_to_boundary_threshold();
-  confidence_threshold_ = config.confidence_threshold();
-  cross_roi_threshold_ = config.cross_roi_threshold();
-  inside_threshold_ = config.inside_threshold();
+  distance_to_boundary_threshold_ = config.distance_to_boundary_threshold(); //-1.0
+  confidence_threshold_ = config.confidence_threshold(); //0.5
+  cross_roi_threshold_ = config.cross_roi_threshold(); //0.6
+  inside_threshold_ = config.inside_threshold(); //1.0
   return true;
 }
 
