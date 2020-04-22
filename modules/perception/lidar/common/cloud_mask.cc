@@ -72,8 +72,8 @@ void CloudMask::RemoveIndices(const base::PointIndices& indices) {
 void CloudMask::RemoveIndicesOfIndices(
     const base::PointIndices& indices,
     const base::PointIndices& indices_of_indices) {
-  for (auto& id : indices_of_indices.indices) {
-    mask_[indices.indices[id]] = 0;
+  for (auto& id : indices_of_indices.indices) { //非地平面的索引
+    mask_[indices.indices[id]] = 0; 
   }
 }
 

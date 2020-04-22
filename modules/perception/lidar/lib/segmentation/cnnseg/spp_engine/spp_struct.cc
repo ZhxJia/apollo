@@ -20,21 +20,21 @@ namespace perception {
 namespace lidar {
 
 void SppData::MakeReference(size_t width, size_t height, float range) {
-  obs_prob_data = category_pt_blob->mutable_cpu_data();
-  offset_data = instance_pt_blob->mutable_cpu_data();
-  confidence_data = confidence_pt_blob->mutable_cpu_data();
+  obs_prob_data = category_pt_blob->mutable_cpu_data(); //是否是object的概率
+  offset_data = instance_pt_blob->mutable_cpu_data(); //聚类中心
+  confidence_data = confidence_pt_blob->mutable_cpu_data(); //置信度
   if (height_pt_blob != nullptr) {
-    z_data = height_pt_blob->mutable_cpu_data();
+    z_data = height_pt_blob->mutable_cpu_data(); //预测高度信息
   }
   if (classify_pt_blob != nullptr) {
-    class_prob_data = classify_pt_blob->mutable_cpu_data();
+    class_prob_data = classify_pt_blob->mutable_cpu_data(); //类别概率
   }
   if (heading_pt_blob != nullptr) {
-    heading_data = heading_pt_blob->mutable_cpu_data();
+    heading_data = heading_pt_blob->mutable_cpu_data(); //预测方向信息
   }
 
   if (obs_prob_data_ref == nullptr) {
-    obs_prob_data_ref = new float*[height];
+    obs_prob_data_ref = new float*[height]; //存储行首指针
   }
   for (size_t i = 0; i < height; ++i) {
     obs_prob_data_ref[i] = obs_prob_data + i * width;

@@ -78,7 +78,7 @@ bool ROIBoundaryFilter::Filter(const ObjectFilterOptions& options,
     FilterObjectsOutsideBoundary(options, frame, &objects_valid_flag_);
   }
   if (inside_threshold_ >= 0.f) {
-    FilterObjectsInsideBoundary(options, frame, &objects_valid_flag_);
+    FilterObjectsInsideBoundary(options, frame, &objects_valid_flag_); //1.0
   }
   FilterObjectsByConfidence(options, frame, &objects_valid_flag_);
   size_t count = 0;
@@ -133,10 +133,10 @@ void ROIBoundaryFilter::FillObjectRoiFlag(const ObjectFilterOptions& options,
     obj->lidar_supplement.is_in_roi =
         obj->lidar_supplement.num_points_in_roi > 0;
     bool cross = (obj->lidar_supplement.num_points_in_roi !=
-                  obj->lidar_supplement.cloud.size());
+                  obj->lidar_supplement.cloud.size()); //位于roi的交界处
     float ratio = static_cast<float>(obj->lidar_supplement.num_points_in_roi) /
-                  static_cast<float>(obj->lidar_supplement.cloud.size());
-    if (ratio < cross_roi_threshold_  // a hacked minimum support value
+                  static_cast<float>(obj->lidar_supplement.cloud.size()); //位于roi区域内的比例
+    if (ratio < cross_roi_threshold_  // a hacked minimum support value 0.6
         || (cross && obj->confidence <= .11f)) {
       objects_cross_roi_[i] = true;
     }
@@ -170,7 +170,7 @@ void ROIBoundaryFilter::FilterObjectsOutsideBoundary(
             min_dist_to_boundary = dist_to_boundary;
           }
         }
-        if (min_dist_to_boundary <= distance_to_boundary_threshold_) {
+        if (min_dist_to_boundary <= distance_to_boundary_threshold_) { //-1.0
           (*objects_valid_flag)[i] = true;
           break;
         }
@@ -197,7 +197,7 @@ void ROIBoundaryFilter::FilterObjectsInsideBoundary(
   Eigen::Vector3d world_point;
   for (size_t i = 0; i < objects.size(); ++i) {
     auto& obj = objects[i];
-    // only compute distance for those outside roi
+    // only compute distance for those outside roi  //inside roi
     if (obj->lidar_supplement.is_in_roi && !objects_cross_roi_[i] &&
         obj->confidence <= .11f) {
       (*objects_valid_flag)[i] = false;
@@ -213,7 +213,7 @@ void ROIBoundaryFilter::FilterObjectsInsideBoundary(
             min_dist_to_boundary = dist_to_boundary;
           }
         }
-        if (min_dist_to_boundary > inside_threshold_) {
+        if (min_dist_to_boundary > inside_threshold_) { //1.0
           (*objects_valid_flag)[i] = true;
           break;
         }

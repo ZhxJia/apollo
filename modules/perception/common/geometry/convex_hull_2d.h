@@ -140,7 +140,7 @@ bool ConvexHull2D<CLOUD_IN_TYPE, CLOUD_OUT_TYPE>::MockConvexHull(
     minv(0) = std::min<double>(minv(0), in_cloud_->at(i).x);
     minv(1) = std::min<double>(minv(1), in_cloud_->at(i).y);
     minv(2) = std::min<double>(minv(2), in_cloud_->at(i).z);
-  }
+  }//得到输入点云x,y,z方向的最大值
 
   static const double eps = 1e-3;
   for (std::size_t i = 0; i < 3; ++i) {
@@ -186,7 +186,7 @@ bool ConvexHull2D<CLOUD_IN_TYPE, CLOUD_OUT_TYPE>::GetConvexHullMonotoneChain(
                 return dx < 0.0;
               }
               return points_[lhs](1) < points_[rhs](1);
-            });
+            }); //对点的x坐标进行排序
   int count = 0;
   int last_count = 1;
   polygon_indices_.clear();
@@ -203,7 +203,7 @@ bool ConvexHull2D<CLOUD_IN_TYPE, CLOUD_OUT_TYPE>::GetConvexHullMonotoneChain(
     while (count > last_count &&
            !IsCounterClockWise(points_[polygon_indices_[count - 2]],
                                points_[polygon_indices_[count - 1]], point,
-                               eps)) {
+                               eps)) { //是否是逆时针方向
       polygon_indices_.pop_back();
       --count;
     }

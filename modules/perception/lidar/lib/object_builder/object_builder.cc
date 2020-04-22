@@ -48,7 +48,7 @@ bool ObjectBuilder::Build(const ObjectBuilderOptions& options,
   for (size_t i = 0; i < objects->size(); ++i) {
     if (objects->at(i)) {
       objects->at(i)->id = static_cast<int>(i);
-      ComputePolygon2D(objects->at(i));
+      ComputePolygon2D(objects->at(i)); //计算物体凸包
     }
   }
   for (size_t i = 0; i < objects->size(); ++i) {
@@ -82,7 +82,7 @@ void ObjectBuilder::ComputeOtherObjectInformation(ObjectPtr object) {
   if (num_point > 0) {
     timestamp /= static_cast<double>(num_point);
   }
-  object->latest_tracked_time = timestamp;
+  object->latest_tracked_time = timestamp; //将所有点的平均时间作为物体最新检测到的时间
 }
 
 void ObjectBuilder::ComputePolygonSizeCenter(ObjectPtr object) {
@@ -92,7 +92,7 @@ void ObjectBuilder::ComputePolygonSizeCenter(ObjectPtr object) {
   Eigen::Vector3f dir = object->direction;
   common::CalculateBBoxSizeCenter2DXY(object->lidar_supplement.cloud, dir,
                                       &(object->size), &(object->center));
-  if (object->lidar_supplement.is_background) {
+  if (object->lidar_supplement.is_background) {//如果是背景
     float length = object->size(0);
     float width = object->size(1);
     Eigen::Matrix<float, 3, 1> ortho_dir(-object->direction(1),
@@ -105,7 +105,7 @@ void ObjectBuilder::ComputePolygonSizeCenter(ObjectPtr object) {
   }
   for (size_t i = 0; i < 3; ++i) {
     if (object->size(i) < kEpsilonForSize) {
-      object->size(i) = kEpsilonForSize;
+      object->size(i) = kEpsilonForSize; //0.01
     }
   }
   object->theta =
@@ -119,7 +119,7 @@ void ObjectBuilder::SetDefaultValue(const Eigen::Vector3f& min_pt_in,
   Eigen::Vector3f max_pt = max_pt_in;
   // handle degeneration case
   for (int i = 0; i < 3; i++) {
-    if (max_pt[i] - min_pt[i] < kEpsilonForSize) {
+    if (max_pt[i] - min_pt[i] < kEpsilonForSize) { //如果最小点和最大点距离小于0.01
       max_pt[i] = max_pt[i] + kEpsilonForSize / 2;
       min_pt[i] = min_pt[i] - kEpsilonForSize / 2;
     }
@@ -171,8 +171,8 @@ bool ObjectBuilder::LinePerturbation(PointFCloud* cloud) {
     for (idx = 2; idx < cloud->size(); ++idx) {
       float tdiff_x = cloud->at(idx).x - cloud->at(start_point).x;
       float tdiff_y = cloud->at(idx).y - cloud->at(start_point).y;
-      if (fabs(diff_x * tdiff_y - tdiff_x * diff_y) > kEpsilonForLine) {
-        return false;
+      if (fabs(diff_x * tdiff_y - tdiff_x * diff_y) > kEpsilonForLine) { //0.001 平行 x1y2=x2y1
+        return false; //三点不共线
       }
     }
     cloud->at(0).x += kEpsilonForLine;
@@ -192,7 +192,7 @@ void ObjectBuilder::GetMinMax3D(const PointFCloud& cloud,
         std::isnan(cloud[i].z)) {
       continue;
     }
-    (*min_pt)[0] = std::min((*min_pt)[0], cloud[i].x);
+    (*min_pt)[0] = std::min((*min_pt)[0], cloud[i].x); //返回min_pt和cloud x坐标较小的元素
     (*max_pt)[0] = std::max((*max_pt)[0], cloud[i].x);
     (*min_pt)[1] = std::min((*min_pt)[1], cloud[i].y);
     (*max_pt)[1] = std::max((*max_pt)[1], cloud[i].y);

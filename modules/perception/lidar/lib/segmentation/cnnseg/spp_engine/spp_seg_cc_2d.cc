@@ -26,29 +26,29 @@ namespace lidar {
 void SppCCDetector::SetData(const float* const* prob_map,
                             const float* offset_map, float scale,
                             float objectness_threshold) {
-  prob_map_ = prob_map;
-  offset_map_ = offset_map;
-  scale_ = scale;
+  prob_map_ = prob_map; //网络输出的category_pt_blob
+  offset_map_ = offset_map; //网络输出的instance_pt_blob
+  scale_ = scale; //对应尺度 每米对应的网格数 
   objectness_threshold_ = objectness_threshold;
   worker_.Bind(std::bind(&SppCCDetector::CleanNodes, this));
   worker_.Start();
 }
 
-bool SppCCDetector::BuildNodes(int start_row_index, int end_row_index) {
-  const float* offset_row_ptr = offset_map_ + start_row_index * cols_;
-  const float* offset_col_ptr = offset_map_ + (rows_ + start_row_index) * cols_;
+bool SppCCDetector::BuildNodes(int start_row_index, int end_row_index) { //0-864
+  const float* offset_row_ptr = offset_map_ + start_row_index * cols_; //行首开始指针
+  const float* offset_col_ptr = offset_map_ + (rows_ + start_row_index) * cols_; //列开始指针 偏移rows*cols(相当于一个信息的特征图网格)
   const float* prob_map_ptr = prob_map_[0] + start_row_index * cols_;
-  Node* node_ptr = nodes_[0] + start_row_index * cols_;
+  Node* node_ptr = nodes_[0] + start_row_index * cols_; //特征图行首对应的节点指针
   for (int row = start_row_index; row < end_row_index; ++row) {
     for (int col = 0; col < cols_; ++col) {
       node_ptr->set_is_object(*prob_map_ptr++ >= objectness_threshold_);
       int center_row = static_cast<int>(*offset_row_ptr++ * scale_ +
-                                        static_cast<float>(row) + 0.5f);
+                                        static_cast<float>(row) + 0.5f); //offset_row_ptr单位为米 转换为网格即为偏移的网格数，向上取整
       int center_col = static_cast<int>(*offset_col_ptr++ * scale_ +
-                                        static_cast<float>(col) + 0.5f);
-      center_row = std::max(0, std::min(rows_ - 1, center_row));
+                                        static_cast<float>(col) + 0.5f); //同理
+      center_row = std::max(0, std::min(rows_ - 1, center_row)); //限制偏移不能超出网格
       center_col = std::max(0, std::min(cols_ - 1, center_col));
-      (node_ptr++)->center_node = center_row * cols_ + center_col;
+      (node_ptr++)->center_node = center_row * cols_ + center_col; //合并偏移 对应得到最终的中心偏移的网格数所在的位置 相对于同一原点的一维索引
     }
   }
   return true;
@@ -71,7 +71,7 @@ size_t SppCCDetector::Detect(SppLabelImage* labels) {
     worker_.Join();  // sync for cleaning nodes
   }
   first_process_ = false;
-  BuildNodes(0, rows_);
+  BuildNodes(0, rows_); //在特征图每个格中创建接待你
   double init_time = timer.toc(true);
 
   double sync_time = timer.toc(true);
@@ -159,34 +159,34 @@ size_t SppCCDetector::ToLabelMap(SppLabelImage* labels) {
       // note label in label image started from 1,
       // zero is reserved from non-object
       if (!root->id) {
-        root->id = ++id;
+        root->id = ++id; //从1开始
       }
       (*labels)[row][col] = root->id;
-      labels->AddPixelSample(root->id - 1, pixel_id);
+      labels->AddPixelSample(root->id - 1, pixel_id); //向聚类cluster中添加网格对应的索引(从0开始)
     }
   }
   labels->ResizeClusters(id);
-  return id;
+  return id; //对应每个cluster的id
 }
 
 void SppCCDetector::Traverse(SppCCDetector::Node* x) {
   std::vector<SppCCDetector::Node*> p;
   p.clear();
   while (x->get_traversed() == 0) {
-    p.push_back(x);
+    p.push_back(x); //对应原始节点的向量
     x->set_traversed(2);
-    x = nodes_[0] + x->center_node;
-  }
-  if (x->get_traversed() == 2) {
+    x = nodes_[0] + x->center_node; //对应偏移节点
+  } //节点不断向前偏移，直到get_traversed!=0 (沿着偏移方向不断前进)
+  if (x->get_traversed() == 2) { //此时x已经遍历到最终的中心
     for (int i = static_cast<int>(p.size()) - 1; i >= 0 && p[i] != x; i--) {
-      p[i]->set_is_center(true);
+      p[i]->set_is_center(true); //将到最终中心点的所有路径上的节点设置为center
     }
     x->set_is_center(true);
   }
   for (size_t i = 0; i < p.size(); i++) {
     Node* y = p[i];
-    y->set_traversed(1);
-    y->parent = x->parent;
+    y->set_traversed(1); //各节点的travrsed为1 只有从未遍历过的到初次遍历时为2
+    y->parent = x->parent; //parent对应各节点的索引，将最终中心的索引值 设置为各中间节点的parent
   }
 }
 
@@ -208,7 +208,7 @@ SppCCDetector::Node* SppCCDetector::DisjointSetFind(Node* x) {
   Node* y = nodes_[0] + x->parent;
   if (y == x || nodes_[0] + y->parent == y) {
     return y;
-  }
+  }//父节点是自身或者指向同一个父节点
   Node* root = DisjointSetFindLoop(nodes_[0] + y->parent);
   x->parent = root->parent;
   y->parent = root->parent;
@@ -216,7 +216,7 @@ SppCCDetector::Node* SppCCDetector::DisjointSetFind(Node* x) {
 }
 
 void SppCCDetector::DisjointSetUnion(Node* x, Node* y) {
-  x = DisjointSetFind(x);
+  x = DisjointSetFind(x); //返回该节点对应父节点
   y = DisjointSetFind(y);
   if (x == y) {
     return;

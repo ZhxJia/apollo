@@ -119,7 +119,7 @@ struct SppCluster {
         ++valid;
       }
     }
-    points.resize(valid);
+    points.resize(valid); //去除地平面上的点
     point_ids.resize(valid);
   }
 

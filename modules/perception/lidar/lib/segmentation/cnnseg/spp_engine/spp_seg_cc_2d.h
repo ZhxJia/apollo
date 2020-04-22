@@ -42,7 +42,7 @@ class SppCCDetector {
       if (nodes_ != nullptr) {
         common::IFree2(&nodes_);
       }
-      nodes_ = common::IAlloc2<Node>(rows, cols);
+      nodes_ = common::IAlloc2<Node>(rows, cols); //864*864
       rows_ = static_cast<int>(rows);
       cols_ = static_cast<int>(cols);
     }
@@ -95,7 +95,7 @@ class SppCCDetector {
       return static_cast<uint16_t>((status & pattern) >> 11);
     }
     inline void set_traversed(uint16_t traversed) {
-      status &= 51199;
+      status &= 51199; //原值清零
       uint16_t pattern = 7;
       status |= static_cast<uint16_t>((traversed & pattern) << 11);
     }

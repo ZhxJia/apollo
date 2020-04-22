@@ -149,10 +149,10 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
   // init spp engine
   SppParams params;
   params.height_gap = spp_engine_config_.height_gap();
-  params.confidence_range = cnnseg_param_.confidence_range(); //854f
+  params.confidence_range = cnnseg_param_.confidence_range(); //85.0
 
   // init spp data
-  auto& spp_data = spp_engine_.GetSppData();
+  auto& spp_data = spp_engine_.GetSppData(); //将sppdata中的blob关联到网络模型输出的blob
   spp_data.instance_pt_blob = instance_pt_blob_.get();
   spp_data.category_pt_blob = category_pt_blob_.get();
   spp_data.confidence_pt_blob = confidence_pt_blob_.get();
@@ -164,16 +164,16 @@ bool CNNSegmentation::InitClusterAndBackgroundSegmentation() {
   if (height_pt_blob_ != nullptr) {
     spp_data.height_pt_blob = height_pt_blob_.get();
   }
-  if (cnnseg_param_.do_classification()) {
+  if (cnnseg_param_.do_classification()) { //true
     spp_data.classify_pt_blob = classify_pt_blob_.get();
   }
-  if (cnnseg_param_.do_heading()) {
+  if (cnnseg_param_.do_heading()) { //true
     spp_data.heading_pt_blob = heading_pt_blob_.get();
   }
   spp_data.MakeReference(width_, height_, range_);
 
   // init spp engine
-  spp_engine_.Init(width_, height_, range_, params, sensor_name_); //90 864 864 
+  spp_engine_.Init(width_, height_, range_, params, sensor_name_); //864 864 90 
 
   roi_cloud_ = base::PointFCloudPool::Instance().Get();
   roi_world_cloud_ = base::PointDCloudPool::Instance().Get();
@@ -314,7 +314,7 @@ void CNNSegmentation::GetObjectsFromSppEngine(
   Timer timer;
   spp_engine_.GetSppData().grid_indices = point2grid_.data();
   size_t num_foreground =
-      spp_engine_.ProcessForegroundSegmentation(original_cloud_);
+      spp_engine_.ProcessForegroundSegmentation(original_cloud_); //返回得到的cluster数量
   fg_seg_time_ = timer.toc(true);
   // should sync with worker before do background segmentation
   worker_.Join();
@@ -323,11 +323,11 @@ void CNNSegmentation::GetObjectsFromSppEngine(
   // note ground points include other noise points
   // filtered by ground detection post process
   AINFO << "Use origin cloud and copy height";
-  for (std::size_t i = 0; i < lidar_frame_ref_->roi_indices.indices.size();
+  for (std::size_t i = 0; i < lidar_frame_ref_->roi_indices.indices.size(); //roi中的点云索引
        ++i) {
     const int roi_id = lidar_frame_ref_->roi_indices.indices[i];
     original_cloud_->mutable_points_height()->at(roi_id) =
-        roi_cloud_->points_height(i);
+        roi_cloud_->points_height(i); //将roi点云中的高度赋值到原始点云中
     if (roi_cloud_->mutable_points_label()->at(i) ==
         static_cast<uint8_t>(LidarPointLabel::GROUND)) {
       original_cloud_->mutable_points_label()->at(roi_id) =
@@ -340,7 +340,7 @@ void CNNSegmentation::GetObjectsFromSppEngine(
   if (cnnseg_param_.remove_ground_points()) {
     num_foreground = spp_engine_.RemoveGroundPointsInForegroundCluster(
         original_cloud_, lidar_frame_ref_->roi_indices,
-        lidar_frame_ref_->non_ground_indices);
+        lidar_frame_ref_->non_ground_indices); //从
     if (num_foreground == 0) {
       ADEBUG << "No foreground segmentation output";
     }
@@ -348,26 +348,26 @@ void CNNSegmentation::GetObjectsFromSppEngine(
 
   const auto& clusters = spp_engine_.clusters();
   objects->clear();
-  base::ObjectPool::Instance().BatchGet(clusters.size(), objects);
+  base::ObjectPool::Instance().BatchGet(clusters.size(), objects); //根据clusters的大小获取objects
   size_t valid = 0;
 
   std::vector<int> cluster_pts;
 
-  for (int i = 0; i < static_cast<int>(clusters.size()); ++i) {
+  for (int i = 0; i < static_cast<int>(clusters.size()); ++i) { //对所有的cluster
     if (clusters[i]->points.size() <= cnnseg_param_.min_pts_num() &&
-        clusters[i]->pixels.size() < cnnseg_param_.min_pts_num()) {
+        clusters[i]->pixels.size() < cnnseg_param_.min_pts_num()) { //3
       continue;
     }
     auto& cluster = clusters[i];
     auto& object = objects->at(valid);
-    object->lidar_supplement.num_points_in_roi = cluster->points_in_roi;
+    object->lidar_supplement.num_points_in_roi = cluster->points_in_roi; //roi中的点云数量
     object->lidar_supplement.on_use = true;
     object->lidar_supplement.is_background = false;
     // CHECK(cluster->points.size() == cluster->point_ids.size())
     //  << "cluster points size: " << cluster->points.size()
     //  << "cluster point ids size: " << cluster->point_ids.size();
     object->lidar_supplement.cloud.CopyPointCloud(*original_cloud_,
-                                                  cluster->point_ids);
+                                                  cluster->point_ids); //object对应的点云
     object->lidar_supplement.cloud_world.CopyPointCloud(*original_world_cloud_,
                                                         cluster->point_ids);
 
@@ -384,8 +384,8 @@ void CNNSegmentation::GetObjectsFromSppEngine(
     object->id = static_cast<int>(valid);
     if (cnnseg_param_.do_classification()) {
       object->lidar_supplement.raw_probs.push_back(std::vector<float>(
-          static_cast<int>(base::ObjectType::MAX_OBJECT_TYPE), 0.f));
-      object->lidar_supplement.raw_classification_methods.push_back(Name());
+          static_cast<int>(base::ObjectType::MAX_OBJECT_TYPE), 0.f)); //初始5类为0
+      object->lidar_supplement.raw_classification_methods.push_back(Name()); //CNNSegmentation
       object->lidar_supplement.raw_probs
           .back()[static_cast<int>(base::ObjectType::UNKNOWN)] =
           cluster->class_prob[static_cast<int>(MetaType::META_UNKNOWN)];
@@ -430,7 +430,7 @@ void CNNSegmentation::GetObjectsFromSppEngine(
     }
     ++valid;
   }
-  objects->resize(valid);
+  objects->resize(valid); //获取有效的object
 
   // add additional object seg logic with ncut if cnnseg miss detects
 

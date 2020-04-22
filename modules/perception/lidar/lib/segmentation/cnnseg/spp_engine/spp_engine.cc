@@ -26,13 +26,13 @@ namespace lidar {
 void SppEngine::Init(size_t width, size_t height, float range,
                      const SppParams& param, const std::string& sensor_name) {
   // initialize connect component detector
-  detector_2d_cc_.Init(static_cast<int>(height), static_cast<int>(width));
+  detector_2d_cc_.Init(static_cast<int>(height), static_cast<int>(width));// 864*864
   detector_2d_cc_.SetData(data_.obs_prob_data_ref, data_.offset_data,
                           static_cast<float>(height) / (2.f * range),
                           data_.objectness_threshold);
   // initialize label image
   labels_2d_.Init(width, height, sensor_name);
-  labels_2d_.InitRangeMask(range, param.confidence_range);
+  labels_2d_.InitRangeMask(range, param.confidence_range); //90.0,85.0
   // set parameters of dynamic map
   params_ = param;
 
@@ -47,7 +47,7 @@ void SppEngine::Init(size_t width, size_t height, float range,
     data_.heading_pt_blob->cpu_data();
     data_.height_pt_blob->cpu_data();
     return true;
-  });
+  }); //绑定线程函数为更新blob数据
   worker_.Start();
 }
 
@@ -58,7 +58,7 @@ size_t SppEngine::ProcessConnectedComponentCluster(
   data_.instance_pt_blob->cpu_data();
   double sync_time1 = timer.toc(true);
   worker_.WakeUp();
-  size_t num = detector_2d_cc_.Detect(&labels_2d_);
+  size_t num = detector_2d_cc_.Detect(&labels_2d_); //创建对应特征图的节点
   if (num == 0) {
     ADEBUG << "No object detected";
     // Later will decide if return this function here
@@ -71,8 +71,8 @@ size_t SppEngine::ProcessConnectedComponentCluster(
   // 2018.6.21 filter use category data to reserve long range objects
   // should be reverted after retrain model
   labels_2d_.FilterClusters(data_.confidence_data, data_.obs_prob_data_ref[0],
-                            data_.confidence_threshold,
-                            data_.objectness_threshold);
+                            data_.confidence_threshold, //0.1
+                            data_.objectness_threshold); //0.5
   double filter_time = timer.toc(true);
   if (data_.class_prob_data != nullptr) {
     labels_2d_.CalculateClusterClass(data_.class_prob_data, data_.class_num);
@@ -87,23 +87,23 @@ size_t SppEngine::ProcessConnectedComponentCluster(
   // 2. process 2d to 3d
   // first sync between cluster list and label image,
   // and they shared the same cluster pointer
-  clusters_ = labels_2d_;
+  clusters_ = labels_2d_; //运算符重载
   for (size_t i = 0; i < point_cloud->size(); ++i) {
     if (mask.size() && mask[static_cast<int>(i)] == 0) {
       continue;
     }
     // out of range
-    const int id = data_.grid_indices[i];
+    const int id = data_.grid_indices[i]; //点云所处的网格索引
     if (id < 0) {
       continue;
     }
     const auto& point = point_cloud->at(i);
-    const uint16_t& label = labels_2d_[0][id];
+    const uint16_t& label = labels_2d_[0][id]; //点云的点所在网格的标签
     if (!label) {
-      continue;
+      continue; //label为0
     }
     if (point.z <=
-        labels_2d_.GetCluster(label - 1)->top_z + data_.top_z_threshold) {
+        labels_2d_.GetCluster(label - 1)->top_z + data_.top_z_threshold) { //thresh=0.5
       clusters_.AddPointSample(label - 1, point, point_cloud->points_height(i),
                                static_cast<uint32_t>(i));
     }
@@ -134,12 +134,12 @@ size_t SppEngine::RemoveGroundPointsInForegroundCluster(
     const base::PointIndices& roi_indices,
     const base::PointIndices& roi_non_ground_indices) {
   mask_.Set(full_point_cloud->size(), 0);
-  mask_.AddIndices(roi_indices);
+  mask_.AddIndices(roi_indices); //默认值为1
   mask_.RemoveIndicesOfIndices(roi_indices, roi_non_ground_indices);
   mask_.Flip();
   // at this time, all ground points has mask value 0
   for (size_t i = 0; i < clusters_.size(); ++i) {
-    clusters_[static_cast<int>(i)]->RemovePoints(mask_);
+    clusters_[static_cast<int>(i)]->RemovePoints(mask_); //去除地平面上的点(mask = 0)
   }
   clusters_.RemoveEmptyClusters();
   return clusters_.size();

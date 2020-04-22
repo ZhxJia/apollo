@@ -41,25 +41,25 @@ void SppLabelImage::Init(size_t width, size_t height,
   clusters_.clear();
 }
 
-void SppLabelImage::InitRangeMask(float range, float boundary_distance) {
+void SppLabelImage::InitRangeMask(float range, float boundary_distance) { //boudary_distance 85.0
   if (range_mask_) {
     common::IFree2(&range_mask_);
   }
   range_mask_ = common::IAlloc2<char>(static_cast<int>(height_),
                                       static_cast<int>(width_));
   memset(range_mask_[0], 0, sizeof(char) * width_ * height_);
-  float meter_per_pixel = range * 2.0f / static_cast<float>(width_);
+  float meter_per_pixel = range * 2.0f / static_cast<float>(width_); //每个单元格占的米数
   size_t half_width = width_ / 2;
   size_t half_height = height_ / 2;
   for (size_t r = 0; r < height_; ++r) {
     for (size_t c = 0; c < width_; ++c) {
       float distance = sqrtf(
           powf((static_cast<float>(r) - static_cast<float>(half_height)), 2.f) +
-          powf((static_cast<float>(c) - static_cast<float>(half_width)), 2.f));
-      distance *= meter_per_pixel;
-      if (distance <= boundary_distance) {
+          powf((static_cast<float>(c) - static_cast<float>(half_width)), 2.f)); //每个网格(pixel)对应中心点的距离(网格为单位)
+      distance *= meter_per_pixel; //换算为米
+      if (distance <= boundary_distance) { //85.0
         range_mask_[r][c] = 1;
-      }
+      } //有效距离内的mask设为1
     }
   }
 }
@@ -125,24 +125,24 @@ void SppLabelImage::FilterClusters(const float* confidence_map,
 
 void SppLabelImage::FilterClusters(const float* confidence_map,
                                    const float* category_map,
-                                   float confidence_threshold,
-                                   float category_threshold) {
+                                   float confidence_threshold, //0.1
+                                   float category_threshold) { //0.5
   std::vector<bool> is_valid;
   is_valid.reserve(clusters_.size());
-  for (auto& cluster : clusters_) {
+  for (auto& cluster : clusters_) { //对应于每个cluster中的像素(即为各个网格)
     char mask = 1;
     for (auto& pixel : cluster->pixels) {
-      mask &= range_mask_[0][pixel];
-    }
+      mask &= range_mask_[0][pixel]; //range_mask有效范围内的初始值为1
+    } //此处采用与操作，一旦cluster不在range_mask中则就会为0
     float sum_confidence = 0.f;
     for (auto& pixel : cluster->pixels) {
-      sum_confidence += confidence_map[pixel];
+      sum_confidence += confidence_map[pixel]; //该cluster对应网格的置信度和
     }
     sum_confidence =
         cluster->pixels.size() > 0
             ? sum_confidence / static_cast<float>(cluster->pixels.size())
             : sum_confidence;
-    cluster->confidence = sum_confidence;
+    cluster->confidence = sum_confidence; //以该cluster所有网格置信度的平均作为cluster的置信度
     if (mask) {  // in range, use confidence estimation
       is_valid.push_back(cluster->confidence >= confidence_threshold);
     } else {  // out of range, use category estimation
@@ -157,22 +157,22 @@ void SppLabelImage::FilterClusters(const float* confidence_map,
       is_valid.push_back(sum_category >= category_threshold);
       // category is not stable, here we hack the confidence
       cluster->confidence =
-          std::max(sum_confidence, confidence_threshold + 0.01f);
+          std::max(sum_confidence, confidence_threshold + 0.01f);  //>=0.1
     }
   }
   size_t current = 0;
   for (size_t n = 0; n < clusters_.size(); ++n) {
     if (is_valid[n]) {
       if (current != n) {
-        clusters_[current] = clusters_[n];
+        clusters_[current] = clusters_[n]; //去除valid的cluster
         for (auto& pixel : clusters_[current]->pixels) {
-          labels_[0][pixel] = static_cast<uint16_t>(current + 1);
+          labels_[0][pixel] = static_cast<uint16_t>(current + 1); //更新labels中对应的标签
         }
       }
       ++current;
     } else {
       for (auto& pixel : clusters_[n]->pixels) {
-        labels_[0][pixel] = 0;
+        labels_[0][pixel] = 0; //将valid的cluster的标签置为0 背景类
       }
     }
   }
@@ -186,9 +186,9 @@ void SppLabelImage::CalculateClusterClass(const float* class_map,
   }
   size_t size = width_ * height_;
   for (size_t c = 0; c < class_num; ++c) {
-    const float* class_map_ptr = class_map + c * size;
+    const float* class_map_ptr = class_map + c * size; //共class_num层，每层代表网格对应类别的概率
     for (auto& cluster : clusters_) {
-      auto& probs = cluster->class_prob;
+      auto& probs = cluster->class_prob; //该cluster的5个类别概率
       for (auto& pixel : cluster->pixels) {
         probs[c] += class_map_ptr[pixel];
       }
@@ -203,13 +203,13 @@ void SppLabelImage::CalculateClusterClass(const float* class_map,
       }
     }
     cluster->type = static_cast<SppClassType>(std::distance(
-        probs.begin(), std::max_element(probs.begin(), probs.end())));
+        probs.begin(), std::max_element(probs.begin(), probs.end()))); //max_element 容器中元素最大值
   }
 }
 
 void SppLabelImage::CalculateClusterHeading(const float* heading_map) {
   std::vector<std::pair<float, float>> directions(clusters_.size(),
-                                                  std::make_pair(0.f, 0.f));
+                                                  std::make_pair(0.f, 0.f)); //各个cluster的(x,y)对
   const float* heading_map_x_ptr = heading_map;
   const float* heading_map_y_ptr = heading_map + width_ * height_;
 
