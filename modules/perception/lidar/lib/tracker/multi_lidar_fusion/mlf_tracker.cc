@@ -39,7 +39,7 @@ bool MlfTracker::Init(const MlfTrackerInitOptions options) {
   MlfTrackerConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
 
-  for (int i = 0; i < config.filter_name_size(); ++i) {
+  for (int i = 0; i < config.filter_name_size(); ++i) { //MlfShapeFilter , MlfMotionFilter
     const auto& name = config.filter_name(i);
     MlfBaseFilter* filter = MlfBaseFilterRegisterer::GetInstanceByName(name);
     CHECK(filter);

@@ -40,8 +40,8 @@ bool MlfShapeFilter::Init(const MlfFilterInitOptions& options) {
   MlfShapeFilterConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
 
-  bottom_points_ignore_threshold_ = config.bottom_points_ignore_threshold();
-  top_points_ignore_threshold_ = config.top_points_ignore_threshold();
+  bottom_points_ignore_threshold_ = config.bottom_points_ignore_threshold(); //0.1
+  top_points_ignore_threshold_ = config.top_points_ignore_threshold(); //1.61/
   return true;
 }
 

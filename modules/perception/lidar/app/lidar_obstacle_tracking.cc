@@ -43,8 +43,8 @@ bool LidarObstacleTracking::Init(
 
   LidarObstacleTrackingConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  multi_target_tracker_name_ = config.multi_target_tracker();
-  fusion_classifier_name_ = config.fusion_classifier();
+  multi_target_tracker_name_ = config.multi_target_tracker(); //MlfEngine
+  fusion_classifier_name_ = config.fusion_classifier(); //FusedClassifier
 
   multi_target_tracker_.reset(
       BaseMultiTargetTrackerRegisterer::GetInstanceByName(

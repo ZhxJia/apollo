@@ -42,8 +42,8 @@ bool MlfMotionRefiner::Init(const MlfMotionRefinerInitOptions& options) {
   MlfMotionRefinerConfig config;
   CHECK(apollo::cyber::common::GetProtoFromFile(config_file, &config));
   // read from proto config
-  claping_speed_threshold_ = config.claping_speed_threshold();
-  claping_acceleration_threshold_ = config.claping_acceleration_threshold();
+  claping_speed_threshold_ = config.claping_speed_threshold(); //10
+  claping_acceleration_threshold_ = config.claping_acceleration_threshold(); /1
   return true;
 }
 

@@ -40,11 +40,11 @@ bool FusedClassifier::Init(const ClassifierInitOptions& options) {
   config_file = GetAbsolutePath(config_file, "fused_classifier.conf");
   FusedClassifierConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  temporal_window_ = config.temporal_window();
-  enable_temporal_fusion_ = config.enable_temporal_fusion();
-  use_tracked_objects_ = config.use_tracked_objects();
-  one_shot_fusion_method_ = config.one_shot_fusion_method();
-  sequence_fusion_method_ = config.sequence_fusion_method();
+  temporal_window_ = config.temporal_window(); //20.0
+  enable_temporal_fusion_ = config.enable_temporal_fusion(); //true
+  use_tracked_objects_ = config.use_tracked_objects(); //true
+  one_shot_fusion_method_ = config.one_shot_fusion_method(); //CCRFOneShotTypeFusion
+  sequence_fusion_method_ = config.sequence_fusion_method(); //CCRFSequenceTypeFusion
   one_shot_fuser_.reset(BaseOneShotTypeFusionRegisterer::GetInstanceByName(
       one_shot_fusion_method_));
   bool init_success = true;

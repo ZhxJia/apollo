@@ -42,18 +42,18 @@ bool MlfMotionFilter::Init(const MlfFilterInitOptions& options) {
   config_file = GetAbsolutePath(config_file, "mlf_motion_filter.conf");
   MlfMotionFilterConfig config;
   CHECK(cyber::common::GetProtoFromFile(config_file, &config));
-  use_adaptive_ = config.use_adaptive();
-  use_breakdown_ = config.use_breakdown();
-  use_convergence_boostup_ = config.use_convergence_boostup();
-  init_velocity_variance_ = config.init_velocity_variance();
-  init_acceleration_variance_ = config.init_acceleration_variance();
-  measured_velocity_variance_ = config.measured_velocity_variance();
-  predict_variance_per_sqrsec_ = config.predict_variance_per_sqrsec();
-  boostup_history_size_minimum_ = config.boostup_history_size_minimum();
-  boostup_history_size_maximum_ = config.boostup_history_size_maximum();
-  converged_confidence_minimum_ = config.converged_confidence_minimum();
-  noise_maximum_ = config.noise_maximum();
-  trust_orientation_range_ = config.trust_orientation_range();
+  use_adaptive_ = config.use_adaptive(); //true
+  use_breakdown_ = config.use_breakdown(); //true
+  use_convergence_boostup_ = config.use_convergence_boostup(); //true
+  init_velocity_variance_ = config.init_velocity_variance(); //5.0
+  init_acceleration_variance_ = config.init_acceleration_variance(); //0.6
+  measured_velocity_variance_ = config.measured_velocity_variance(); //0.6
+  predict_variance_per_sqrsec_ = config.predict_variance_per_sqrsec(); //50.0
+  boostup_history_size_minimum_ = config.boostup_history_size_minimum(); //3
+  boostup_history_size_maximum_ = config.boostup_history_size_maximum(); //6
+  converged_confidence_minimum_ = config.converged_confidence_minimum(); //0.5
+  noise_maximum_ = config.noise_maximum(); //0.1
+  trust_orientation_range_ = config.trust_orientation_range(); //40
 
   motion_measurer_.reset(new MlfMotionMeasurement);
 

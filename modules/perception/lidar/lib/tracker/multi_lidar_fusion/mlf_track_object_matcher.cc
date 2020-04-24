@@ -41,12 +41,12 @@ bool MlfTrackObjectMatcher::Init(
 
   foreground_matcher_.reset(
       BaseBipartiteGraphMatcherRegisterer::GetInstanceByName(
-          config.foreground_mathcer_method()));
+          config.foreground_mathcer_method())); //MultiHmBipartiteGraphMatcher
   CHECK(foreground_matcher_ != nullptr);
   AINFO << "MlfTrackObjectMatcher, fg: " << foreground_matcher_->Name();
   background_matcher_.reset(
       BaseBipartiteGraphMatcherRegisterer::GetInstanceByName(
-          config.background_matcher_method()));
+          config.background_matcher_method())); //GnnBipartiteGraphMatcher
   CHECK(background_matcher_ != nullptr);
   AINFO << "MlfTrackObjectMatcher, bg: " << background_matcher_->Name();
   foreground_matcher_->cost_matrix()->Reserve(1000, 1000);
@@ -56,8 +56,8 @@ bool MlfTrackObjectMatcher::Init(
   MlfTrackObjectDistanceInitOptions distance_init_options;
   CHECK(track_object_distance_->Init(distance_init_options));
 
-  bound_value_ = config.bound_value();
-  max_match_distance_ = config.max_match_distance();
+  bound_value_ = config.bound_value(); //100
+  max_match_distance_ = config.max_match_distance(); //4.0
   return true;
 }
 

@@ -45,7 +45,7 @@ void TrackedObject::AttachObject(base::ObjectPtr obj_ptr,
     // object info to tracked object
     center = pose * object_ptr->center;
     const PointFCloud& cloud = (object_ptr->lidar_supplement).cloud;
-    barycenter = (common::CalculateCentroid(cloud)).cast<double>();
+    barycenter = (common::CalculateCentroid(cloud)).cast<double>(); //计算重心
     barycenter = pose * barycenter;
     anchor_point = barycenter;
 

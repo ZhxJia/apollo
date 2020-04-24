@@ -47,11 +47,11 @@ bool MlfEngine::Init(const MultiTargetTrackerInitOptions& options) {
     main_sensor_.emplace(config.main_sensor(i));
   }
 
-  use_histogram_for_match_ = config.use_histogram_for_match();
-  histogram_bin_size_ = config.histogram_bin_size();
-  output_predict_objects_ = config.output_predict_objects();
-  reserved_invisible_time_ = config.reserved_invisible_time();
-  use_frame_timestamp_ = config.use_frame_timestamp();
+  use_histogram_for_match_ = config.use_histogram_for_match(); //true
+  histogram_bin_size_ = config.histogram_bin_size(); //10
+  output_predict_objects_ = config.output_predict_objects(); //false
+  reserved_invisible_time_ = config.reserved_invisible_time(); //0.3
+  use_frame_timestamp_ = config.use_frame_timestamp(); //true
 
   foreground_objects_.clear();
   background_objects_.clear();
@@ -81,10 +81,10 @@ bool MlfEngine::Track(const MultiTargetTrackerOptions& options,
   }
   // 1. add global offset to pose (only when no track exists)
   if (foreground_track_data_.empty() && background_track_data_.empty()) {
-    global_to_local_offset_ = -frame->lidar2world_pose.translation();
+    global_to_local_offset_ = -frame->lidar2world_pose.translation(); //世界坐标系到lidar坐标系的位移
   }
   sensor_to_local_pose_ = frame->lidar2world_pose;
-  sensor_to_local_pose_.pretranslate(global_to_local_offset_);
+  sensor_to_local_pose_.pretranslate(global_to_local_offset_); //将位移部分修改为世界坐标系到lidar坐标系
   // 2. split fg and bg objects, and transform to tracked objects
   SplitAndTransformToTrackedObjects(frame->segmented_objects,
                                     frame->sensor_info);
