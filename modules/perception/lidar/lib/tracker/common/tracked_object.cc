@@ -43,13 +43,13 @@ void TrackedObject::AttachObject(base::ObjectPtr obj_ptr,
     sensor_to_local_pose = pose;
 
     // object info to tracked object
-    center = pose * object_ptr->center;
+    center = pose * object_ptr->center; //将世界坐标系下的物体中心转换到局部坐标系下
     const PointFCloud& cloud = (object_ptr->lidar_supplement).cloud;
     barycenter = (common::CalculateCentroid(cloud)).cast<double>(); //计算重心
-    barycenter = pose * barycenter;
+    barycenter = pose * barycenter;　//jac?? pose 是世界坐标系到局部坐标系而点云是lidar坐标系,不清楚转换到哪去了
     anchor_point = barycenter;
 
-    Eigen::Matrix3d rotation = pose.rotation();
+    Eigen::Matrix3d rotation = pose.rotation(); //lidar->world rotation
     direction = rotation * object_ptr->direction.cast<double>();
     lane_direction = direction;
     size = object_ptr->size.cast<double>();
@@ -61,7 +61,7 @@ void TrackedObject::AttachObject(base::ObjectPtr obj_ptr,
     cloud_world.resize(cloud.size());
     for (size_t i = 0; i < cloud.size(); ++i) {
       Eigen::Vector3d pt(cloud[i].x, cloud[i].y, cloud[i].z);
-      Eigen::Vector3d pt_world = pose * pt;
+      Eigen::Vector3d pt_world = pose * pt; //将lidar坐标系下的点转换到局部坐标系下
       cloud_world[i].x = pt_world(0);
       cloud_world[i].y = pt_world(1);
       cloud_world[i].z = pt_world(2);
@@ -233,16 +233,16 @@ void TrackedObject::ComputeShapeFeatures() {
   // Compute object's shape feature
   // 1. check whether shape feature is ready
   // 2. compute object's shape feature
-  shape_features_full.resize(histogram_bin_size * 7);
+  shape_features_full.resize(histogram_bin_size * 7); //10*7
   FeatureDescriptor fd(&(object_ptr->lidar_supplement.cloud));
   fd.ComputeHistogram(static_cast<int>(histogram_bin_size),
                       shape_features_full.data());
 
-  size_t feature_len = histogram_bin_size * 3;
+  size_t feature_len = histogram_bin_size * 3;//x,y,z
   shape_features.clear();
   shape_features.resize(feature_len);
   for (size_t i = 0; i < feature_len; ++i) {
-    shape_features[i] = shape_features_full[i + 7];
+    shape_features[i] = shape_features_full[i + 7]; //直方图特征
   }
 }
 }  // namespace lidar

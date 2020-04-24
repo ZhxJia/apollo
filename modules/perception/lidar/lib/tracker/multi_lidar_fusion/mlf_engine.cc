@@ -127,14 +127,14 @@ void MlfEngine::SplitAndTransformToTrackedObjects(
                                      global_to_local_offset_, sensor_info);
     if (!objects[i]->lidar_supplement.is_background &&
         use_histogram_for_match_) {
-      tracked_objects[i]->histogram_bin_size = histogram_bin_size_;
+      tracked_objects[i]->histogram_bin_size = histogram_bin_size_; //10
       tracked_objects[i]->ComputeShapeFeatures();
-    }
+    }//非背景类
     if (objects[i]->lidar_supplement.is_background) {
       background_objects_.push_back(tracked_objects[i]);
     } else {
       foreground_objects_.push_back(tracked_objects[i]);
-    }
+    }//前景 背景分离
   }
   AINFO << "MlfEngine: " << sensor_info.name
         << " foreground: " << foreground_objects_.size()

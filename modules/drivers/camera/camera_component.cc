@@ -111,9 +111,9 @@ void CameraComponent::run() {
 }
 
 CameraComponent::~CameraComponent() {
-  if (running_.load()) {
+  if (running_.load()) { //加载running 当前的值
     running_.exchange(false);
-    async_result_.wait();
+    async_result_.wait(); //确保整个cyber系统退出时，线程程序执行完成，以免发成错误
   }
 }
 

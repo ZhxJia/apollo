@@ -80,12 +80,12 @@ void MlfTrackObjectMatcher::Match(
   }
 
   BipartiteGraphMatcherOptions matcher_options;
-  matcher_options.cost_thresh = max_match_distance_;
-  matcher_options.bound_value = bound_value_;
+  matcher_options.cost_thresh = max_match_distance_; //4
+  matcher_options.bound_value = bound_value_; //100
 
   BaseBipartiteGraphMatcher *matcher = objects[0]->is_background
                                            ? background_matcher_.get()
-                                           : foreground_matcher_.get();
+                                           : foreground_matcher_.get(); //二分图匹配 单独处理前景和背景
 
   common::SecureMat<float> *association_mat = matcher->cost_matrix();
 

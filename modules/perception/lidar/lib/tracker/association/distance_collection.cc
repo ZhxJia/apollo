@@ -41,14 +41,14 @@ float LocationDistance(const TrackedObjectConstPtr& last_object,
 
   float location_dist = static_cast<float>(sqrt(
       (measure_predict_diff.head(2).cwiseProduct(measure_predict_diff.head(2)))
-          .sum()));
+          .sum()));//差值的平方和开根号　cwiseProduce是两个矩阵对应位置乘积
 
   /* NEED TO NOTICE: All the states would be collected mainly based on
    * states of tracked objects. Thus, update tracked object when you
    * update the state of track !!!!! */
   Eigen::Vector2d ref_dir = last_object->output_velocity.head(2);
-  double speed = ref_dir.norm();
-  ref_dir /= speed;
+  double speed = ref_dir.norm();//向量的l2范数
+  ref_dir /= speed; //车辆速度方向的单位向量,代表车辆行驶方向
 
   /* Let location distance generated from a normal distribution with
    * symmetric variance. Modify its variance when speed greater than
@@ -59,7 +59,7 @@ float LocationDistance(const TrackedObjectConstPtr& last_object,
                 ref_dir(1) * measure_predict_diff(1);
     double dy = ref_o_dir(0) * measure_predict_diff(0) +
                 ref_o_dir(1) * measure_predict_diff(1);
-    location_dist = static_cast<float>(sqrt(dx * dx * 0.5 + dy * dy * 2));
+    location_dist = static_cast<float>(sqrt(dx * dx * 0.5 + dy * dy * 2)); //沿对应方向的位置差
   }
 
   return location_dist;
@@ -101,8 +101,8 @@ float BboxSizeDistance(const TrackedObjectConstPtr& last_object,
   // Compute bbox size distance for last object and new object
   // range from 0 to 1
 
-  Eigen::Vector3f old_bbox_dir = last_object->output_direction.cast<float>();
-  Eigen::Vector3f new_bbox_dir = new_object->direction.cast<float>();
+  Eigen::Vector3f old_bbox_dir = last_object->output_direction.cast<float>();//跟踪列表中最近一次的物体
+  Eigen::Vector3f new_bbox_dir = new_object->direction.cast<float>();//新检测的物体
   Eigen::Vector3f old_bbox_size = last_object->output_size.cast<float>();
   Eigen::Vector3f new_bbox_size = new_object->size.cast<float>();
 
@@ -110,7 +110,7 @@ float BboxSizeDistance(const TrackedObjectConstPtr& last_object,
   double dot_val_00 = fabs(old_bbox_dir(0) * new_bbox_dir(0) +
                            old_bbox_dir(1) * new_bbox_dir(1));
   double dot_val_01 = fabs(old_bbox_dir(0) * new_bbox_dir(1) -
-                           old_bbox_dir(1) * new_bbox_dir(0));
+                           old_bbox_dir(1) * new_bbox_dir(0)); //确定物体的朝向所对应的长宽对应　点积代表投影
   float temp_val_0 = 0.0f;
   float temp_val_1 = 0.0f;
   if (dot_val_00 > dot_val_01) {

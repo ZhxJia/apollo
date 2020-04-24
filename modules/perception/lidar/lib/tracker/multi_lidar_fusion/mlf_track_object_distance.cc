@@ -67,7 +67,7 @@ bool MlfTrackObjectDistance::Init(
     foreground_weight_table_.emplace(name, weights);
   }
   for (int i = 0; i < config.background_weights_size(); ++i) {
-    const auto& bgws = config.background_weights(i);
+    const auto& bgws = config.background_weights(i); //配置文件中并没有对应的值
     const std::string& name = bgws.sensor_name_pair();
     std::vector<float> weights(7, 0.f);
     weights[0] = bgws.location_dist_weight();
@@ -93,7 +93,7 @@ float MlfTrackObjectDistance::ComputeDistance(
   if (is_background) {
     auto iter = background_weight_table_.find(key);
     if (iter == background_weight_table_.end()) {
-      weights = &kBackgroundDefaultWeight;
+      weights = &kBackgroundDefaultWeight;　//由于配置文件并没有对应值，所以采用默认权重参数
     } else {
       weights = &iter->second;
     }

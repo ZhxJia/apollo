@@ -33,14 +33,14 @@ class FeatureDescriptor {
   void SetCloud(base::PointFCloud* cloud) { cloud_ = cloud; }
 
   void ComputeHistogram(int bin_size, float* feature) {
-    GetMinMaxCenter();
-    int xstep = bin_size;
-    int ystep = bin_size;
+    GetMinMaxCenter(); //获取三个方向的顶点和中心点
+    int xstep = bin_size; //10
+    int ystep = bin_size; //10
     int zstep = bin_size;
-    int stat_len = xstep + ystep + zstep;
+    int stat_len = xstep + ystep + zstep; //30
     std::vector<int> stat_feat(stat_len, 0);
     float xsize =
-        (max_pt_.x - min_pt_.x) / static_cast<float>(xstep) + 0.000001f;
+        (max_pt_.x - min_pt_.x) / static_cast<float>(xstep) + 0.000001f;//x方向的总长度
     float ysize =
         (max_pt_.y - min_pt_.y) / static_cast<float>(ystep) + 0.000001f;
     float zsize =
@@ -52,7 +52,7 @@ class FeatureDescriptor {
       ++stat_feat[static_cast<int>((pt.x - min_pt_.x) / xsize)];
       ++stat_feat[xstep + static_cast<int>((pt.y - min_pt_.y) / ysize)];
       ++stat_feat[xstep + ystep + static_cast<int>((pt.z - min_pt_.z) / zsize)];
-    }
+    }//将x,y,z三个方向分割为10份计算每一份索引所代表位置的计数值
 
     feature[0] = center_pt_.x / 10.0f;
     feature[1] = center_pt_.y / 10.0f;
