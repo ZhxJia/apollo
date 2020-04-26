@@ -81,13 +81,13 @@ bool FusedClassifier::Classify(const ClassifierOptions& options,
       }
       const int track_id = object->track_id;
       sequence_.GetTrackInTemporalWindow(track_id, &tracked_objects,
-                                         temporal_window_);
+                                         temporal_window_); //20. 获取temporal_window时间范围内的tracked_objects
       if (tracked_objects.empty()) {
         AERROR << "Find zero-length track, so skip.";
         continue;
       }
       if (object != tracked_objects.rbegin()->second) {
-        AERROR << "There must exist some timestamp in disorder, so skip.";
+        AERROR << "There must exist some timestamp in disorder, so skip."; //比较最新的object是否相等,rbegin()为反向迭代器
         continue;
       }
       if (!sequence_fuser_->TypeFusion(option_, &tracked_objects)) {

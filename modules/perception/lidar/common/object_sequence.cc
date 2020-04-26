@@ -54,7 +54,7 @@ bool ObjectSequence::GetTrackInTemporalWindow(TrackIdKey track_id,
   }
   track->clear();
   std::lock_guard<std::mutex> lock(mutex_);
-  double start_time = current_ - window_time;
+  double start_time = current_ - window_time; //window_time=20.0
   auto iter = sequence_.find(track_id);
   if (iter == sequence_.end()) {
     return false;
@@ -72,7 +72,7 @@ void ObjectSequence::RemoveStaleTracks(TimeStampKey current_stamp) {
     CHECK(outer_iter->second.size() > 0) << "Find empty tracks.";
     auto& track = outer_iter->second;
 
-    if (current_stamp - track.rbegin()->first > kMaxTimeOut) {
+    if (current_stamp - track.rbegin()->first > kMaxTimeOut) { //5.0s
       sequence_.erase(outer_iter++);
       continue;
     }

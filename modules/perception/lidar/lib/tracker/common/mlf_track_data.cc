@@ -60,7 +60,7 @@ void MlfTrackData::PushTrackedObjectToTrack(TrackedObjectPtr obj) {
     duration_ = obj->tracking_time;
     if (obj->is_fake) {
       ++consecutive_invisible_count_;
-      consecutive_invisible_time_ = timestamp - latest_visible_time_;
+      consecutive_invisible_time_ = timestamp - latest_visible_time_; //持续的不可见时间
     } else {
       consecutive_invisible_count_ = 0;
       consecutive_invisible_time_ = 0.0;
