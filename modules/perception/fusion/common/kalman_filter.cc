@@ -177,20 +177,20 @@ bool KalmanFilter::SetValueBreakdownThresh(const std::vector<bool> &break_down,
 }
 void KalmanFilter::CorrectionBreakdown() {
   Eigen::VectorXd states_gain = global_states_ - prior_global_states_;
-  Eigen::VectorXd breakdown_diff = states_gain.cwiseProduct(gain_break_down_);
+  Eigen::VectorXd breakdown_diff = states_gain.cwiseProduct(gain_break_down_); //加速度差异
   global_states_ -= breakdown_diff;
-  if (breakdown_diff.norm() > gain_break_down_threshold_) {
+  if (breakdown_diff.norm() > gain_break_down_threshold_) { //2.0
     breakdown_diff.normalize();
     breakdown_diff *= gain_break_down_threshold_;
   }
-  global_states_ += breakdown_diff;
+  global_states_ += breakdown_diff; //加速度的变化应小于阈值
 
   Eigen::VectorXd temp;
   temp.setOnes(states_num_, 1);
   if ((global_states_.cwiseProduct(value_break_down_)).norm() <
-      value_break_down_threshold_) {
+      value_break_down_threshold_) { //0.05
     global_states_ = global_states_.cwiseProduct(temp - value_break_down_);
-  }
+  } //速度变为0
   prior_global_states_ = global_states_;
 }
 

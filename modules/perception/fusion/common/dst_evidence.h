@@ -39,13 +39,13 @@ struct DstCommonData {
   // for computing support vector effectively
   std::vector<std::vector<size_t>> subset_relations_;
   // for computing plausibility vector effectively
-  std::vector<std::vector<size_t>> inter_relations_;
+  std::vector<std::vector<size_t>> inter_relations_; //intersection
   std::map<uint64_t, size_t> subsets_ind_map_;
 };
 
 typedef DstCommonData* DstCommonDataPtr;
 
-// @brief: A singleton class to mange the set of fod subset and the
+// @brief: A singleton class to manage the set of fod subset and the
 // intersection relationship between them.
 class DstManager {
  public:
@@ -75,7 +75,7 @@ class DstManager {
   // default construction.
   void FodCheck(DstCommonData* dst_data);
   // compute the cardinality of fod_subset which means counting set bits in
-  // an integer
+  // an integer 
   void ComputeCardinalities(DstCommonData* st_data);
   bool ComputeRelations(DstCommonData* dst_data);
   void BuildNamesMap(const std::vector<std::string>& fod_subset_names,
@@ -130,9 +130,9 @@ class Dst {
   mutable DstCommonDataPtr dst_data_ptr_ = nullptr;
   mutable std::vector<double> bba_vec_;
   mutable std::vector<double> support_vec_;
-  mutable std::vector<double> plausibility_vec_;
-  mutable std::vector<double> uncertainty_vec_;
-  mutable std::vector<double> probability_vec_;
+  mutable std::vector<double> plausibility_vec_; //合理性
+  mutable std::vector<double> uncertainty_vec_; //不确定性
+  mutable std::vector<double> probability_vec_; //概率
 };
 
 }  // namespace fusion

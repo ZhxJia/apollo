@@ -92,7 +92,7 @@ bool CCRFOneShotTypeFusion::FuseOneShotTypeProbs(const ObjectPtr& object,
   if (log_prob == nullptr) {
     return false;
   }
-  const auto& vecs = object->lidar_supplement.raw_probs;
+  const auto& vecs = object->lidar_supplement.raw_probs; //原始由各种分类方法确定的5种类型的类别概率
   const auto& names = object->lidar_supplement.raw_classification_methods;
   if (vecs.empty()) {
     return false;
@@ -105,14 +105,14 @@ bool CCRFOneShotTypeFusion::FuseOneShotTypeProbs(const ObjectPtr& object,
   float conf = object->confidence;
   for (size_t i = 0; i < vecs.size(); ++i) {
     auto& vec = vecs[i];
-    util::FromStdToVector(vec, &single_prob);
+    util::FromStdToVector(vec, &single_prob); //将std::vector有效类型转换为Eigen::Vector
     auto iter = smooth_matrices_.find(names[i]);
     if (vecs.size() == 1 || iter == smooth_matrices_.end()) {
-      single_prob = single_prob + epsilon;
+      single_prob = single_prob + epsilon; //四种有效类型的概率 UNKNOWN,PEDESTRIAN,BICYCLE,VEHICLE
     } else {
       single_prob = iter->second * single_prob + epsilon;
     }
-    util::Normalize(&single_prob);
+    util::Normalize(&single_prob); //归一化
     // p(c|x) = p(c|x,o)p(o|x)+ p(c|x,~o)p(~o|x)
     single_prob = conf * single_prob +
                   (1.0 - conf) * confidence_smooth_matrix_ * single_prob;
@@ -187,7 +187,7 @@ bool CCRFSequenceTypeFusion::FuseWithConditionalProbabilityInference(
   fused_sequence_probs_.resize(length);
   state_back_trace_.resize(length);
 
-  fused_sequence_probs_[0] = fused_oneshot_probs_[0];
+  fused_sequence_probs_[0] = fused_oneshot_probs_[0];//跟踪序列中的第一个object
   // Add priori knowledge to suppress the sudden-appeared object types.
   fused_sequence_probs_[0] += transition_matrix_.row(0).transpose();
 
@@ -201,17 +201,17 @@ bool CCRFSequenceTypeFusion::FuseWithConditionalProbabilityInference(
                transition_matrix_(left, right) * s_alpha_ +
                fused_oneshot_probs_[i](right);
         if (prob > max_prob) {
-          max_prob = prob;
+          max_prob = prob; //根据转移概率推断得到当前的object (right值)最大概率
           id = left;
         }
       }
-      fused_sequence_probs_[i](right) = max_prob;
+      fused_sequence_probs_[i](right) = max_prob; //序列中各个物体对应类别的最大概率
       state_back_trace_[i](right) = static_cast<int>(id);
     }
   }
   ObjectPtr object = tracked_objects->rbegin()->second;
   RecoverFromLogProbability(&fused_sequence_probs_.back(), &object->type_probs,
-                            &object->type);
+                            &object->type); //将Eigen转换回std::vector得到物体类别
   return true;
 }
 

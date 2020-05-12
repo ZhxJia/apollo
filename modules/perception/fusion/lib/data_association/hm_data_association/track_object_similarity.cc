@@ -40,26 +40,26 @@ double ComputePtsBoxLocationSimilarity(const ProjectionCachePtr& cache,
   double x_std_dev = 0.4;
   double y_std_dev = 0.5;
   size_t check_augmented_iou_minimum_pts_num = 20;
-  float augmented_buffer = 25.0f;
+  float augmented_buffer = 25.0f; //box的扩张尺寸
   if (object->Empty()) {
-    ADEBUG << "cache object is empty!";
+    ADEBUG << "cache object is empty!"; //为空一般因为此时该目标lidar的点云不在相机的视野内
     return min_p;
   }
   Eigen::Vector2d mean_pixel_dist(0.0, 0.0);
   // calculate mean x y pixel distance
   const size_t start_ind = object->GetStartInd();
   const size_t end_ind = object->GetEndInd();
-  if (end_ind - start_ind >= check_augmented_iou_minimum_pts_num) {
-    base::BBox2DF velo_bbox = object->GetBox();
+  if (end_ind - start_ind >= check_augmented_iou_minimum_pts_num) { //该物体的投影2d点数目大于20个
+    base::BBox2DF velo_bbox = object->GetBox(); //点云2d投影点对应的外接box
     float augmented_iou =
-        CalculateAugmentedIOUBBox(velo_bbox, camera_bbox, augmented_buffer);
-    if (augmented_iou < FLT_EPSILON) {
+        CalculateAugmentedIOUBBox(velo_bbox, camera_bbox, augmented_buffer);//将box扩张之后计算IOU
+    if (augmented_iou < FLT_EPSILON) { //IOU之间没有交集,返回最小相似性
       ADEBUG << "augmented iou is empty!";
       return min_p;
     }
   }
   for (size_t i = start_ind; i < end_ind; ++i) {
-    auto* velo_pt2d = cache->GetPoint2d(i);
+    auto* velo_pt2d = cache->GetPoint2d(i); //获取该object包含的投影2d点
     if (velo_pt2d == nullptr) {
       AERROR << "query pt from projection cache failed!";
       continue;
@@ -68,14 +68,14 @@ double ComputePtsBoxLocationSimilarity(const ProjectionCachePtr& cache,
         velo_pt2d->x() < camera_bbox.xmax &&
         velo_pt2d->y() >= camera_bbox.ymin &&
         velo_pt2d->y() < camera_bbox.ymax) {
-      continue;
+      continue;//如果lidar投影的2d点位于camera的box的内部,跳过
     }
     Eigen::Vector2d diff;
     diff.x() = std::max(0.0, camera_bbox.xmin - velo_pt2d->x());
-    diff.x() = std::max(diff.x(), velo_pt2d->x() - camera_bbox.xmax);
+    diff.x() = std::max(diff.x(), velo_pt2d->x() - camera_bbox.xmax); //x方向差异的最大值(超出camera的box的大小)
     diff.y() = std::max(0.0, camera_bbox.ymin - velo_pt2d->y());
-    diff.y() = std::max(diff.y(), velo_pt2d->y() - camera_bbox.ymax);
-    mean_pixel_dist += diff;
+    diff.y() = std::max(diff.y(), velo_pt2d->y() - camera_bbox.ymax); //y方向差异的最大值
+    mean_pixel_dist += diff; //分别累加该物体每一个点在x,y方向上的差异最大值
   }
   mean_pixel_dist /= static_cast<double>(object->Size());
   ADEBUG << "mean_pixel_dist is: " << mean_pixel_dist;
@@ -83,10 +83,10 @@ double ComputePtsBoxLocationSimilarity(const ProjectionCachePtr& cache,
   Eigen::Vector2d box_size = Eigen::Vector2d(
       camera_bbox.xmax - camera_bbox.xmin, camera_bbox.ymax - camera_bbox.ymin);
   mean_pixel_dist.array() /= box_size.array();
-  // assuming the normalized distance obeys gauss distribution
+  // assuming the normalized distance obeys gauss distribution x,y方向的均值服从正态分布,平方和服从卡方分布,除标准差转换为标准正态分布
   double square_norm_mean_pixel_dist =
-      mean_pixel_dist.x() * mean_pixel_dist.x() / x_std_dev / x_std_dev +
-      mean_pixel_dist.y() * mean_pixel_dist.y() / y_std_dev / y_std_dev;
+      mean_pixel_dist.x() * mean_pixel_dist.x() / x_std_dev / x_std_dev + //0.4
+      mean_pixel_dist.y() * mean_pixel_dist.y() / y_std_dev / y_std_dev;  //0.5
   // use chi-square distribution. Cauchy may be more reasonable.
   double location_similarity =
       1 - ChiSquaredCdf2TableFun(square_norm_mean_pixel_dist);
@@ -122,7 +122,7 @@ double ComputePtsBoxShapeSimilarity(const ProjectionCachePtr& cache,
                velo_projection_bbox.xmax - velo_projection_bbox.xmin);
   velo_box_size.y() =
       std::max(static_cast<float>(velo_box_size.y()),
-               velo_projection_bbox.ymax - velo_projection_bbox.ymin);
+               velo_projection_bbox.ymax - velo_projection_bbox.ymin); //限制velo_box的尺寸不能低于camera_box的十分之一
   // compute normalized box size diff
   Eigen::Vector2d mean_box_size = (camera_box_size + velo_box_size) / 2;
   Eigen::Vector2d box_size_diff =
@@ -174,11 +174,11 @@ double ComputeRadarCameraXSimilarity(const double velo_ct_x,
                                      const double camera_ct_x,
                                      const double size_x,
                                      const XSimilarityParams& params) {
-  double x_diff = std::abs(velo_ct_x - camera_ct_x) / size_x;
-  double x_similarity = WelshVarLossFun(x_diff, params.welsh_loss_thresh_,
-                                        params.welsh_loss_scale_);
+  double x_diff = std::abs(velo_ct_x - camera_ct_x) / size_x; //中心点x方向的差异
+  double x_similarity = WelshVarLossFun(x_diff, params.welsh_loss_thresh_, //0.5
+                                        params.welsh_loss_scale_); //0.3
   x_similarity = ScalePositiveProbability(
-      x_similarity, params.scale_positive_max_p_, params.scale_positive_th_p_);
+      x_similarity, params.scale_positive_max_p_, params.scale_positive_th_p_);//0.9，0.5
   return x_similarity;
 }
 double ComputeRadarCameraYSimilarity(const double velo_ct_y,
@@ -190,16 +190,16 @@ double ComputeRadarCameraYSimilarity(const double velo_ct_y,
   //     size_y;
 
   double y_diff = std::max(std::abs(velo_ct_y - camera_ct_y) -
-                               size_y * params.smooth_factor_,
+                               size_y * params.smooth_factor_, //0.3
                            0.0) /
                   size_y;
 
   double normalized_y_diff =
-      y_diff * y_diff / params.diff_std_dev_ / params.diff_std_dev_;
+      y_diff * y_diff / params.diff_std_dev_ / params.diff_std_dev_;//标准化
   double y_similarity = 1 - ChiSquaredCdf1TableFun(normalized_y_diff);
   y_similarity = BoundedScalePositiveProbability(
-      y_similarity, params.bounded_scale_positive_max_p_,
-      params.bounded_scale_positive_min_p_);
+      y_similarity, params.bounded_scale_positive_max_p_, //0.6
+      params.bounded_scale_positive_min_p_); //0.5
   return y_similarity;
 }
 double ComputeRadarCameraHSimilarity(
@@ -256,13 +256,13 @@ double ComputeRadarCameraLocSimilarity(const Eigen::Vector3d& radar_ct,
                                        const LocSimilarityParams& params) {
   Eigen::Vector3d camera_ct = camera->GetBaseObject()->center;
   Eigen::Vector3d camera_ct_c =
-      (world2camera_pose * camera_ct.homogeneous()).head(3);
-  double ct_diff = (radar_ct - camera_ct).norm();
+      (world2camera_pose * camera_ct.homogeneous()).head(3);//将camera检测的目标中心点转换到相机坐标系下
+  double ct_diff = (radar_ct - camera_ct).norm(); //?radar_ct应该为世界坐标系下的点,为啥此处能直接比较
   ct_diff = ct_diff / camera_ct_c.z();
   double ct_similarity = WelshVarLossFun(ct_diff, params.welsh_loss_thresh_,
                                          params.welsh_loss_scale_);
   ct_similarity = ScalePositiveProbability(
-      ct_similarity, params.scale_positive_max_p_, params.scale_positive_th_p_);
+      ct_similarity, params.scale_positive_max_p_, params.scale_positive_th_p_); //max 0.7
   return ct_similarity;
 }
 

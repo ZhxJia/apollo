@@ -34,7 +34,7 @@ struct ToicDstMaps {
 };
 
 struct ExistanceDstMaps {
-  enum { EXIST = (1 << 0), NEXIST = (1 << 1), EXISTUNKOWN = (EXIST | NEXIST) };
+  enum { EXIST = (1 << 0), NEXIST = (1 << 1), EXISTUNKOWN = (EXIST | NEXIST) }; //1,2,3
   std::vector<uint64_t> fod_subsets_ = {EXIST, NEXIST, EXISTUNKOWN};
   std::vector<std::string> subset_names_ = {"EXIST", "NEXIST", "EXISTUNKOWN"};
 };

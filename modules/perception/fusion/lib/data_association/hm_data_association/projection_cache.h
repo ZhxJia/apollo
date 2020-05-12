@@ -32,7 +32,7 @@ namespace fusion {
 class ProjectionCacheObject {
  public:
   ProjectionCacheObject() : start_ind_(0), end_ind_(0) {
-    box_ = base::BBox2DF();
+    box_ = base::BBox2DF(); // xmin ymin xmax ymax
   }
   explicit ProjectionCacheObject(size_t point2ds_size)
       : start_ind_(point2ds_size), end_ind_(point2ds_size) {
@@ -52,7 +52,7 @@ class ProjectionCacheObject {
  private:
   // project pts cache index of start/end, the pts of CacheObject belongs
   // to [start_ind_, end_ind_) of point2ds of Cache
-  size_t start_ind_;
+  size_t start_ind_;//对应该object的3dlidar点对应的图像平面2d投影点的起止索引
   size_t end_ind_;
   base::BBox2DF box_;
 };  // class ProjectionCacheObject
@@ -86,7 +86,7 @@ class ProjectionCacheFrame {
   // sensor id of cached project frame
   std::string sensor_id_;
   double timestamp_;
-  std::map<int, ProjectionCacheObject> objects_;
+  std::map<int, ProjectionCacheObject> objects_; //pair(projection sensorid,projection object)
 };  // class ProjectionCacheFrame
 
 // @brief: project cache
@@ -120,9 +120,10 @@ class ProjectionCache {
   size_t GetPoint2dsSize() const { return point2ds_.size(); }
   // add point
   void AddPoint(const Eigen::Vector2f& pt) {
-    point2ds_.emplace_back(pt.x(), pt.y());
+    point2ds_.emplace_back(pt.x(), pt.y()); //添加lidar3d点的图像2d投影点
   }
-  // add object
+  // add object 
+  //@return：ProjectionCacheObject 的引用,此时的object没有相关的属性
   ProjectionCacheObject* BuildObject(const std::string& measurement_sensor_id,
                                      double measurement_timestamp,
                                      const std::string& projection_sensor_id,
@@ -171,10 +172,11 @@ class ProjectionCache {
     frames_.push_back(ProjectionCacheFrame(sensor_id, timestamp));
     return &(frames_[frames_.size() - 1]);
   }
+  //@param: projection_sensor_id,projection_timestamp
   ProjectionCacheFrame* QueryFrame(const std::string& sensor_id,
                                    double timestamp) {
     for (size_t i = 0; i < frames_.size(); ++i) {
-      if (!frames_[i].VerifyKey(sensor_id, timestamp)) {
+      if (!frames_[i].VerifyKey(sensor_id, timestamp)) { //要求传感器的id相同，timestamp = measurement_timestamp_
         continue;
       }
       return &(frames_[i]);

@@ -27,7 +27,7 @@ void FromStdToVector(const std::vector<float>& src_prob, Vectord* dst_prob) {
   (*dst_prob)(0) = src_prob[0];
   for (size_t i = 3; i < static_cast<size_t>(ObjectType::MAX_OBJECT_TYPE);
        ++i) {
-    (*dst_prob)(i - 2) = static_cast<double>(src_prob[i]);
+    (*dst_prob)(i - 2) = static_cast<double>(src_prob[i]); //从索引3开始才是有效类型 共有四种有效类型 0，3，4，5
   }
 }
 

@@ -34,7 +34,7 @@ bool DstManager::AddApp(const std::string &app_name,
   }
   DstCommonData dst_data;
   dst_data.fod_subsets_ = fod_subsets;
-  BuildSubsetsIndMap(&dst_data);
+  BuildSubsetsIndMap(&dst_data); //fod_subsets_ 建立索引map subsets_ind_map_ :pair{subset,indice}
   if (dst_data.subsets_ind_map_.size() != dst_data.fod_subsets_.size()) {
     AERROR << boost::format(
                   "Dst %s: The input fod subsets"
@@ -42,13 +42,13 @@ bool DstManager::AddApp(const std::string &app_name,
                   app_name;
     return false;
   }
-  FodCheck(&dst_data);
-  ComputeCardinalities(&dst_data);
-  if (!ComputeRelations(&dst_data)) {
+  FodCheck(&dst_data); //fod_loc_ = 6
+  ComputeCardinalities(&dst_data); //fod_subset_cardinalities_ 对应subset中各个值对应二进制1的个数
+  if (!ComputeRelations(&dst_data)) { //subset_relations_,inter_relations_,combination_relations_
     return false;
   }
   dst_data.init_ = true;
-  BuildNamesMap(fod_subset_names, &dst_data);
+  BuildNamesMap(fod_subset_names, &dst_data); //fod_subset_names_
 
   std::lock_guard<std::mutex> lock(map_mutex_);
   dst_common_data_[app_name] = dst_data;
@@ -98,19 +98,19 @@ void DstManager::BuildSubsetsIndMap(DstCommonData *dst_data) {
 void DstManager::FodCheck(DstCommonData *dst_data) {
   uint64_t fod = 0;
   for (auto fod_subset : dst_data->fod_subsets_) {
-    fod |= fod_subset;
+    fod |= fod_subset; //31
   }
-  dst_data->fod_loc_ = dst_data->fod_subsets_.size();
+  dst_data->fod_loc_ = dst_data->fod_subsets_.size(); //7
   auto find_res = dst_data->subsets_ind_map_.insert(
-      std::make_pair(fod, dst_data->fod_subsets_.size()));
+      std::make_pair(fod, dst_data->fod_subsets_.size())); //若fod已经存在则不进行插入，同时返回find_res.second=false
   if (find_res.second) {
-    dst_data->fod_subsets_.push_back(fod);
+    dst_data->fod_subsets_.push_back(fod); //31
   } else {
-    dst_data->fod_loc_ = find_res.first->second;
+    dst_data->fod_loc_ = find_res.first->second;//6 对应编号索引
   }
 }
 
-void DstManager::ComputeCardinalities(DstCommonData *dst_data) {
+void DstManager::ComputeCardinalities(DstCommonData *dst_data) { //计算subset中有几个1,即1的数目 默认1 1 1 1 2 5
   auto count_set_bits = [](uint64_t fod_subset) {
     size_t count = 0;
     while (fod_subset) {
@@ -133,28 +133,28 @@ bool DstManager::ComputeRelations(DstCommonData *dst_data) {
     for (auto &relation : relations) {
       relation.reserve(size);
     }
-  };
+  }; //relations reserve size*size space 
   reserve_space(dst_data->subset_relations_, dst_data->fod_subsets_.size());
-  reserve_space(dst_data->inter_relations_, dst_data->fod_subsets_.size());
+  reserve_space(dst_data->inter_relations_, dst_data->fod_subsets_.size()); //7*7
   // reserve space for combination_relations
-  dst_data->combination_relations_.clear();
+  dst_data->combination_relations_.clear(); //reserve size * 2size space
   dst_data->combination_relations_.resize(dst_data->fod_subsets_.size());
   for (auto &combination_relation : dst_data->combination_relations_) {
     combination_relation.reserve(2 * dst_data->fod_subsets_.size());
   }
-  for (size_t i = 0; i < dst_data->fod_subsets_.size(); ++i) {
+  for (size_t i = 0; i < dst_data->fod_subsets_.size(); ++i) {  //fod subsets 相互之间的关系
     uint64_t fod_subset = dst_data->fod_subsets_[i];
     auto &subset_inds = dst_data->subset_relations_[i];
     auto &inter_inds = dst_data->inter_relations_[i];
 
     for (size_t j = 0; j < dst_data->fod_subsets_.size(); ++j) {
       if ((fod_subset | dst_data->fod_subsets_[j]) == fod_subset) {
-        subset_inds.push_back(j);
+        subset_inds.push_back(j); //对应subset[i]所包含的subset[j],即自身subset的包含关系
       }
-      uint64_t inter_res = fod_subset & dst_data->fod_subsets_[j];
+      uint64_t inter_res = fod_subset & dst_data->fod_subsets_[j]; //对应subsets两两之间二进制的相同位(存在交集的关系)
       if (inter_res) {
         inter_inds.push_back(j);
-        auto find_res = dst_data->subsets_ind_map_.find(inter_res);
+        auto find_res = dst_data->subsets_ind_map_.find(inter_res); //交集对应的subset
         if (find_res == dst_data->subsets_ind_map_.end()) {
           AERROR << boost::format(
               "Dst: The input set "
@@ -163,7 +163,7 @@ bool DstManager::ComputeRelations(DstCommonData *dst_data) {
           return false;
         }
         dst_data->combination_relations_[find_res->second].push_back(
-            std::make_pair(i, j));
+            std::make_pair(i, j)); //对应交集subset对应的索引编号以及对应该交集的所有匹配对
       }
     }
   }
@@ -256,7 +256,7 @@ bool Dst::SetBba(const std::map<uint64_t, double> &bba_map) {
                    belief_mass % app_name_;
       return false;
     }
-    bba_vec[find_res->second] = belief_mass;
+    bba_vec[find_res->second] = belief_mass; //根据subset所在索引设置对应的权重
   }
   // reset
   // *this = Dst(app_name_);
@@ -335,19 +335,19 @@ void Dst::ComputeProbability() const {
   SelfCheck();
   probability_vec_.clear();
   probability_vec_.resize(bba_vec_.size(), 0.0);
-  const auto &combination_relations = dst_data_ptr_->combination_relations_;
+  const auto &combination_relations = dst_data_ptr_->combination_relations_; //存储两个subset的交集索引编号和该两个subset的编号
   const std::vector<size_t> &fod_subset_cardinalities =
-      dst_data_ptr_->fod_subset_cardinalities_;
+      dst_data_ptr_->fod_subset_cardinalities_; //存储各个subset对应的二进制值中1的个数
   for (size_t i = 0; i < combination_relations.size(); ++i) {
-    const auto &combination_pairs = combination_relations[i];
-    double intersection_card = static_cast<double>(fod_subset_cardinalities[i]);
+    const auto &combination_pairs = combination_relations[i];//交集为各个subset的pair
+    double intersection_card = static_cast<double>(fod_subset_cardinalities[i]); //该subset对应的位数
     for (auto combination_pair : combination_pairs) {
       size_t a_ind = combination_pair.first;
       size_t b_ind = combination_pair.second;
       probability_vec_[a_ind] +=
           intersection_card /
           static_cast<double>(fod_subset_cardinalities[b_ind]) *
-          bba_vec_[b_ind];
+          bba_vec_[b_ind];//根据交集的位数占后者的位数的比例确定所占概率比例的大小
     }
   }
 }
@@ -381,7 +381,7 @@ Dst operator+(const Dst &lhs, const Dst &rhs) {
       // AINFO << boost::format("(%d %d)") % combination_pair.first
       //     % combination_pair.second;
       belief_mass += lhs.GetIndBfmass(combination_pair.first) *
-                     rhs.GetIndBfmass(combination_pair.second);
+                     rhs.GetIndBfmass(combination_pair.second);//ind->mass
     }
     // AINFO << boost::format("belief_mass: %lf") % belief_mass;
   }

@@ -60,11 +60,11 @@ bool PbfTracker::InitParams() {
 
   AINFO << "Load PbfTrackerConfig: " << params.type_fusion_method() << ","
         << params.motion_fusion_method() << "," << params.shape_fusion_method()
-        << "," << params.existance_fusion_method();
-  s_type_fusion_method_ = params.type_fusion_method();
-  s_motion_fusion_method_ = params.motion_fusion_method();
-  s_existance_fusion_method_ = params.existance_fusion_method();
-  s_shape_fusion_method_ = params.shape_fusion_method();
+        << "," << params.existance_fusion_method(); //DstExistanceFusion
+  s_type_fusion_method_ = params.type_fusion_method(); //DstTypeFusion
+  s_motion_fusion_method_ = params.motion_fusion_method(); //KalmanMotionFusion
+  s_existance_fusion_method_ = params.existance_fusion_method(); //DstExistanceFusion
+  s_shape_fusion_method_ = params.shape_fusion_method(); //PbfShapeFusion
 
   return true;
 }

@@ -36,7 +36,7 @@ void ConnectedComponentAnalysis(const std::vector<std::vector<int>>& graph,
   CHECK_NOTNULL(components);
   int num_item = static_cast<int>(graph.size());
   std::vector<int> visited;
-  visited.resize(num_item, 0);
+  visited.resize(num_item, 0);//row_nums+col_nums 用于判断是否已经访问
   std::queue<int> que;
   std::vector<int> component;
   component.reserve(num_item);
@@ -49,20 +49,20 @@ void ConnectedComponentAnalysis(const std::vector<std::vector<int>>& graph,
     component.push_back(index);
     que.push(index);
     visited[index] = 1;
-    while (!que.empty()) {
+    while (!que.empty()) { //循环直到队列为空
       int current_id = que.front();
       que.pop();
-      for (size_t sub_index = 0; sub_index < graph[current_id].size();
+      for (size_t sub_index = 0; sub_index < graph[current_id].size(); 
            ++sub_index) {
-        int neighbor_id = graph[current_id][sub_index];
-        if (visited[neighbor_id] == 0) {
+        int neighbor_id = graph[current_id][sub_index];//循环获取当前current_id的匹配值
+        if (visited[neighbor_id] == 0) { //如果未被访问
           component.push_back(neighbor_id);
           que.push(neighbor_id);
           visited[neighbor_id] = 1;
         }
       }
     }
-    components->push_back(component);
+    components->push_back(component); //获取连接在一起的组件(每一个独立的组件内各个索引连通)，这样构成了多个独立的组件
     component.clear();
   }
 }

@@ -73,8 +73,8 @@ void PbfShapeFusion::UpdateState(const SensorObjectConstPtr& measurement) {
 }
 
 void PbfShapeFusion::UpdateShape(const SensorObjectConstPtr& measurement) {
-  base::ObjectPtr dst_obj = track_ref_->GetFusedObject()->GetBaseObject();
-  base::ObjectConstPtr src_obj = measurement->GetBaseObject();
+  base::ObjectPtr dst_obj = track_ref_->GetFusedObject()->GetBaseObject(); //目标
+  base::ObjectConstPtr src_obj = measurement->GetBaseObject(); //源
 
   dst_obj->size = src_obj->size;
   dst_obj->direction = src_obj->direction;

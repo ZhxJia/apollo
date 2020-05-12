@@ -43,7 +43,7 @@ ProbabilisticFusion::ProbabilisticFusion() {}
 ProbabilisticFusion::~ProbabilisticFusion() {}
 
 bool ProbabilisticFusion::Init(const FusionInitOptions& init_options) {
-  main_sensor_ = init_options.main_sensor;
+  main_sensor_ = init_options.main_sensor;//velodyne128
 
   BaseInitOptions options;
   if (!GetFusionInitOptions("ProbabilisticFusion", &options)) {
@@ -63,18 +63,18 @@ bool ProbabilisticFusion::Init(const FusionInitOptions& init_options) {
   params_.use_lidar = params.use_lidar();
   params_.use_radar = params.use_radar();
   params_.use_camera = params.use_camera();
-  params_.tracker_method = params.tracker_method();
-  params_.data_association_method = params.data_association_method();
-  params_.gate_keeper_method = params.gate_keeper_method();
+  params_.tracker_method = params.tracker_method(); //PbfTracker
+  params_.data_association_method = params.data_association_method(); //HMAssociation
+  params_.gate_keeper_method = params.gate_keeper_method(); //PbfGatekeeper
   for (int i = 0; i < params.prohibition_sensors_size(); ++i) {
     params_.prohibition_sensors.push_back(params.prohibition_sensors(i));
   }
 
   // static member initialization from PB config
-  Track::SetMaxLidarInvisiblePeriod(params.max_lidar_invisible_period());
-  Track::SetMaxRadarInvisiblePeriod(params.max_radar_invisible_period());
-  Track::SetMaxCameraInvisiblePeriod(params.max_camera_invisible_period());
-  Sensor::SetMaxCachedFrameNumber(params.max_cached_frame_num());
+  Track::SetMaxLidarInvisiblePeriod(params.max_lidar_invisible_period()); //0.25
+  Track::SetMaxRadarInvisiblePeriod(params.max_radar_invisible_period()); // 0.50
+  Track::SetMaxCameraInvisiblePeriod(params.max_camera_invisible_period()); //0.75
+  Sensor::SetMaxCachedFrameNumber(params.max_cached_frame_num()); //50
 
   scenes_.reset(new Scene());
   if (params_.data_association_method == "HMAssociation") {
@@ -110,7 +110,7 @@ bool ProbabilisticFusion::Fuse(const FusionOptions& options,
                                std::vector<base::ObjectPtr>* fused_objects) {
   CHECK(fused_objects != nullptr) << "fusion error: fused_objects is nullptr";
 
-  auto* sensor_data_manager = SensorDataManager::Instance();
+  auto* sensor_data_manager = SensorDataManager::Instance(); //单例类
   // 1. save frame data
   {
     std::lock_guard<std::mutex> data_lock(data_mutex_);
@@ -145,7 +145,7 @@ bool ProbabilisticFusion::Fuse(const FusionOptions& options,
   std::lock_guard<std::mutex> fuse_lock(fuse_mutex_);
   double fusion_time = sensor_frame->timestamp;
   std::vector<SensorFramePtr> frames;
-  sensor_data_manager->GetLatestFrames(fusion_time, &frames);
+  sensor_data_manager->GetLatestFrames(fusion_time, &frames); //获取各个传感器在(last_fusion_timestamp,fusion_time)之间的最新帧，并按照时间顺序排序
   AINFO << "Get " << frames.size() << " related frames for fusion";
 
   // 3. perform fusion on related frames
@@ -182,7 +182,7 @@ void ProbabilisticFusion::FuseFrame(const SensorFramePtr& frame) {
         << ", background_object_number: "
         << frame->GetBackgroundObjects().size()
         << ", timestamp: " << GLOG_TIMESTAMP(frame->GetTimestamp());
-  this->FuseForegroundTrack(frame);
+  this->FuseForegroundTrack(frame); //相机区分前景和背景吗?
   this->FusebackgroundTrack(frame);
   this->RemoveLostTrack();
 }

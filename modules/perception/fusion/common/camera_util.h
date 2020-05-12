@@ -40,7 +40,7 @@ bool IsPtInFrustum(const VectorType& pt, double width, double height) {
   }
   return true;
 }
-
+// @brief:将原始框进行扩张计算IOU
 template <typename Type>
 Type CalculateAugmentedIOUBBox(const base::BBox2D<Type>& box1,
                                const base::BBox2D<Type>& box2,

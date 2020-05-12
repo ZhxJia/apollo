@@ -86,7 +86,7 @@ inline double ChiSquaredCdf2TableFun(double dist) {
     return 1.0;
   }
   return (ChiSquaredCdf2TableTable[dist_int] * (1 - w) +
-          ChiSquaredCdf2TableTable[dist_int + 1] * w);
+          ChiSquaredCdf2TableTable[dist_int + 1] * w); //插值
 }
 
 }  // namespace fusion

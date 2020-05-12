@@ -142,7 +142,7 @@ Eigen::Matrix<T, 3, 1> Calculate2DXYProjectVector(
   }
   Eigen::Matrix<T, 3, 1> project_dir = project_vector;
   project_dir(2) = 0.0;
-  project_dir.normalize();
+  project_dir.normalize(); //投影方向的单位向量
 
   const T projected_vector_project_dir_inner_product =
       projected_vector(0) * project_dir(0) +

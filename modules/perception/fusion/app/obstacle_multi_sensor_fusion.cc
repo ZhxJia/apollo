@@ -25,10 +25,10 @@ bool ObstacleMultiSensorFusion::Init(
     AINFO << "Already inited";
     return true;
   }
-  fusion_ = BaseFusionSystemRegisterer::GetInstanceByName(param.fusion_method);
+  fusion_ = BaseFusionSystemRegisterer::GetInstanceByName(param.fusion_method); //ProbabilisticFusion
 
   FusionInitOptions init_options;
-  init_options.main_sensor = param.main_sensor;
+  init_options.main_sensor = param.main_sensor; //velodyne128
   if (fusion_ == nullptr || !fusion_->Init(init_options)) {
     AINFO << "Failed to Get Instance or Initialize " << param.fusion_method;
     return false;

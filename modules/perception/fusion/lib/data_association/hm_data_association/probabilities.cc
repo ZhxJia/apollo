@@ -27,27 +27,27 @@ double BoundedScalePositiveProbability(double p, double max_p, double min_p) {
   p = (p - min_p) * (max_p - min_p) / (1 - min_p) + min_p;
   return p;
 }
-// @brief: scale input prob
+// @brief: scale input prob 限制缩放positive(即大于th_p)的概率
 // @return scaled prob
 // @NOTE: original method name is scale_positive_probability
 double ScalePositiveProbability(double p, double max_p, double th_p) {
   if (p <= th_p) {
     return p;
   }
-  p = (p - th_p) * (max_p - th_p) / (1 - th_p) + th_p;
+  p = (p - th_p) * (max_p - th_p) / (1 - th_p) + th_p; //以0.5为阈值,大于0.5时限制最大概率为0.9
   return p;
 }
 // @brief: calculate the Welsh Loss
 // @return Welsh Loss of input dist
 // @NOTE: original method name is welsh_var_loss_fun
 double WelshVarLossFun(double dist, double th, double scale) {
-  double p = 1e-6;
+  double p = 1e-6; //这里的dist是归一化之后的应该位于0,1之间
   if (dist < th) {
     p = 1 - 1e-6;
   } else {
     dist -= th;
     dist /= scale;
-    p = std::exp(-dist * dist);
+    p = std::exp(-dist * dist);//距离离0.5越大值越小,此处为正态分布的一半>0.5
   }
   return p;
 }
@@ -57,7 +57,7 @@ double WelshVarLossFun(double dist, double th, double scale) {
 // @return fused prob of input prob pair
 // @NOTE: original method name is fused_tow_probabilities
 double FuseTwoProbabilities(double prob1, double prob2) {
-  double prob = (prob1 * prob2) / (2 * prob1 * prob2 + 1 - prob1 - prob2);
+  double prob = (prob1 * prob2) / (2 * prob1 * prob2 + 1 - prob1 - prob2);//p1/(1-p1) * p2/(1-p2) =tmp ;prob=(tmp)/(tmp+1)
   return prob;
 }
 // @brief: fuse multiple probabilities
@@ -75,7 +75,7 @@ double FuseMultipleProbabilities(const std::vector<double>& probs) {
   };
   for (auto& log_odd_prob : log_odd_probs) {
     log_odd_prob = prob_to_log_odd(log_odd_prob);
-  }
+  }//将概率转换为对数形式,将乘积改为求和
   double log_odd_probs_sum =
       std::accumulate(log_odd_probs.begin(), log_odd_probs.end(), 0.0);
   return log_odd_to_prob(log_odd_probs_sum);

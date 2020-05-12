@@ -68,16 +68,16 @@ bool DstExistanceFusion::Init() {
   }
 
   options_.track_object_max_match_distance_ =
-      params.track_object_max_match_distance();
+      params.track_object_max_match_distance(); //4.0
   AINFO << "dst existence fusion params: "
         << " track_object_max_match_distance: "
         << options_.track_object_max_match_distance_;
 
   DstManager::Instance()->AddApp(name_, existance_dst_maps_.fod_subsets_,
-                                 existance_dst_maps_.subset_names_);
+                                 existance_dst_maps_.subset_names_); //EXIST, NEXIST, EXISTUNKOWN
 
   DstManager::Instance()->AddApp(toic_name_, toic_dst_maps_.fod_subsets_,
-                                 toic_dst_maps_.subset_names_);
+                                 toic_dst_maps_.subset_names_); //"TOIC", "NTOIC", "TOICUNKOWN"
 
   return DstManager::Instance()->IsAppAdded(name_) &&
          DstManager::Instance()->IsAppAdded(toic_name_);
@@ -88,8 +88,8 @@ void DstExistanceFusion::UpdateWithMeasurement(
     double match_dist) {
   std::string sensor_id = measurement->GetSensorId();
   double timestamp = measurement->GetTimestamp();
-  double max_match_distance = options_.track_object_max_match_distance_;
-  double association_prob = 1 - match_dist / max_match_distance;
+  double max_match_distance = options_.track_object_max_match_distance_; //4.0
+  double association_prob = 1 - match_dist / max_match_distance; //1
   if (IsCamera(measurement)) {
     association_prob = 1.0;
   }
@@ -97,18 +97,18 @@ void DstExistanceFusion::UpdateWithMeasurement(
   double exist_factor = GetExistReliability(measurement);
   double decay = ComputeDistDecay(obj, sensor_id, timestamp);
   if (IsRadar(measurement)) {
-    decay = ComputeFeatureInfluence(measurement);
+    decay = ComputeFeatureInfluence(measurement);//如果是radar则通过速度和obj的confidence计算衰减，速度小于4.0为0
   }
   double obj_exist_prob = exist_factor * decay;
-  Dst existance_evidence(fused_existance_.Name());
+  Dst existance_evidence(fused_existance_.Name());//DstExistanceFusion 通过Name从DstManager中获取相应初始化值
   existance_evidence.SetBba(
       {{ExistanceDstMaps::EXIST, obj_exist_prob},
-       {ExistanceDstMaps::EXISTUNKOWN, 1 - obj_exist_prob}});
+       {ExistanceDstMaps::EXISTUNKOWN, 1 - obj_exist_prob}}); //set bba_vec_
   // TODO(all) hard code for fused exist bba
   const double exist_fused_w = 1.0;
   ADEBUG << " before update exist prob: " << GetExistanceProbability();
   fused_existance_ =
-      fused_existance_ + existance_evidence * exist_fused_w * association_prob;
+      fused_existance_ + existance_evidence * exist_fused_w * association_prob; //Dst数据结构的运算符重载
   ADEBUG << " update with, EXIST prob: " << GetExistanceProbability()
          << " obj_id " << measurement->GetBaseObject()->track_id
          << " association_prob: " << association_prob << " decay: " << decay
@@ -304,8 +304,8 @@ void DstExistanceFusion::UpdateToicWithCameraMeasurement(
 
   Eigen::Affine3d sensor2world_pose;
   bool status =
-      sensor_manager->GetPose(sensor_id, timestamp, &sensor2world_pose);
-  auto max_dist_it = options_.camera_max_valid_dist_.find(sensor_id);
+      sensor_manager->GetPose(sensor_id, timestamp, &sensor2world_pose); //get sensor2world_pose
+  auto max_dist_it = options_.camera_max_valid_dist_.find(sensor_id); //查找对应相机传感器的最大有效距离
   if (max_dist_it == options_.camera_max_valid_dist_.end()) {
     AWARN << boost::format(
                  "There is no pre-defined max valid camera"
@@ -315,13 +315,13 @@ void DstExistanceFusion::UpdateToicWithCameraMeasurement(
     ADEBUG << "camera dist: " << sensor_id << " " << max_dist_it->second;
   }
   if (status && max_dist_it != options_.camera_max_valid_dist_.end()) {
-    SensorObjectConstPtr lidar_object = track_ref_->GetLatestLidarObject();
-    SensorObjectConstPtr radar_object = track_ref_->GetLatestRadarObject();
+    SensorObjectConstPtr lidar_object = track_ref_->GetLatestLidarObject(); //获取该track最近匹配的lidar_object
+    SensorObjectConstPtr radar_object = track_ref_->GetLatestRadarObject(); //获取该track最近匹配的radar_object
     double camera_max_dist = max_dist_it->second;
     if (lidar_object != nullptr) {
       in_view_ratio =
           ObjectInCameraView(lidar_object, camera_model, sensor2world_pose,
-                             timestamp, camera_max_dist, true, false);
+                             timestamp, camera_max_dist, true, false); //获取lidar_object在相机中的可视化程度
     } else if (radar_object != nullptr) {
       in_view_ratio =
           ObjectInCameraView(radar_object, camera_model, sensor2world_pose,
@@ -329,8 +329,8 @@ void DstExistanceFusion::UpdateToicWithCameraMeasurement(
     }
   }
 
-  double max_match_distance = options_.track_object_max_match_distance_;
-  double association_prob = 1 - match_dist / max_match_distance;
+  double max_match_distance = options_.track_object_max_match_distance_; //track和object的最大匹配距离4.0
+  double association_prob = 1 - match_dist / max_match_distance; //这里由于track和object存在匹配所以对应的match_dist=0
 
   Dst toic_evidence(fused_toic_.Name());
   toic_evidence.SetBba({{ToicDstMaps::TOIC, association_prob},
@@ -344,11 +344,11 @@ std::string DstExistanceFusion::Name() const { return name_; }
 
 double DstExistanceFusion::GetExistanceProbability() const {
   size_t toic_ind = DstManager::Instance()->FodSubsetToInd(
-      fused_existance_.Name(), ExistanceDstMaps::EXIST);
+      fused_existance_.Name(), ExistanceDstMaps::EXIST); //获取EXIST对应的ind索引
   fused_existance_.ComputeProbability();
   const std::vector<double> &existance_probs_vec =
       fused_existance_.GetProbabilityVec();
-  return existance_probs_vec[toic_ind];
+  return existance_probs_vec[toic_ind];//返回EXIST对应的概率
 }
 
 double DstExistanceFusion::GetToicProbability() const {
@@ -372,7 +372,7 @@ void DstExistanceFusion::UpdateExistanceState() {
       p = 0.5 - (0.5 - p) * (0.5 - min_p) / 0.5;
     }
     return p;
-  };
+  }; //限制概率值的范围
   // TODO(yuantingrong): hard code
   const double max_p = 0.8;
   const double min_p = 0.2;
@@ -381,7 +381,7 @@ void DstExistanceFusion::UpdateExistanceState() {
   // which means wen do not want introducing historical information
   // to affect the association, but when this fused object have just
   // radar object, we want using the historical information to filter
-  // large amount of false positive
+  // large amount of false positive(对于radar过滤误检)
   if (!(track_ref_->GetLidarObjects()).empty()) {
     toic_score_ = 0.5;
   } else if (!track_ref_->GetRadarObjects().empty()) {

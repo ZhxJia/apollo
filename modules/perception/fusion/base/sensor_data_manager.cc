@@ -98,7 +98,7 @@ void SensorDataManager::GetLatestFrames(
 
   frames->clear();
   for (auto it = sensors_.begin(); it != sensors_.end(); ++it) {
-    SensorFramePtr frame = it->second->QueryLatestFrame(timestamp);
+    SensorFramePtr frame = it->second->QueryLatestFrame(timestamp); //查询在(latest_fused_time_stamp,timestamp)时间段内各个传感器对应的最新帧
     if (frame != nullptr) {
       frames->push_back(frame);
     }

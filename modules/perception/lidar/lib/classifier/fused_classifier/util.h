@@ -29,7 +29,7 @@ namespace perception {
 namespace lidar {
 
 enum {
-  VALID_OBJECT_TYPE = static_cast<int>(base::ObjectType::MAX_OBJECT_TYPE) - 2
+  VALID_OBJECT_TYPE = static_cast<int>(base::ObjectType::MAX_OBJECT_TYPE) - 2 //4
 };
 
 typedef Eigen::Matrix<double, VALID_OBJECT_TYPE, 1> Vectord;

@@ -171,13 +171,13 @@ void GatedHungarianMatcher<T>::MatchInit() {
 
   /* determine function of comparison */
   static std::map<OptimizeFlag, std::function<bool(T, T)>> compare_fun_map = {
-      {OptimizeFlag::OPTMAX, std::less<T>()},
+      {OptimizeFlag::OPTMAX, std::less<T>()}, // < return true
       {OptimizeFlag::OPTMIN, std::greater<T>()},
   };
   auto find_ret = compare_fun_map.find(opt_flag_);
   CHECK(find_ret != compare_fun_map.end());
   compare_fun_ = find_ret->second;
-  is_valid_cost_ = std::bind1st(compare_fun_, cost_thresh_);
+  is_valid_cost_ = std::bind1st(compare_fun_, cost_thresh_); //若为OPTMIN当cost_thresh>global_cost(i,j)返回true
 
   /* check the validity of bound_value */
   CHECK(!is_valid_cost_(bound_value_));
@@ -194,15 +194,15 @@ void GatedHungarianMatcher<T>::ComputeConnectedComponents(
   nb_graph.resize(rows_num_ + cols_num_);
   for (int i = 0; i < rows_num_; ++i) {
     for (int j = 0; j < cols_num_; ++j) {
-      if (is_valid_cost_(global_costs_(i, j))) {
-        nb_graph[i].push_back(static_cast<int>(rows_num_) + j);
-        nb_graph[j + rows_num_].push_back(i);
+      if (is_valid_cost_(global_costs_(i, j))) { //判断global_costs_(i,j)<cost_thresh
+        nb_graph[i].push_back(static_cast<int>(rows_num_) + j); //存储所有与该tracks相关连的measures
+        nb_graph[j + rows_num_].push_back(i); //存储所有与该measures相关连的tracks
       }
     }
   }
 
   std::vector<std::vector<int>> components;
-  ConnectedComponentAnalysis(nb_graph, &components);
+  ConnectedComponentAnalysis(nb_graph, &components); //components 中的各个component为存在连接的节点,component之间不存在连接
   row_components->clear();
   row_components->resize(components.size());
   col_components->clear();
@@ -215,7 +215,7 @@ void GatedHungarianMatcher<T>::ComputeConnectedComponents(
       } else {
         id -= static_cast<int>(rows_num_);
         col_components->at(i).push_back(id);
-      }
+      } //将原始行列分开,即将tracks和measurements分开存
     }
   }
 }

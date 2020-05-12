@@ -49,12 +49,12 @@ bool KalmanMotionFusion::InitFilter(const SensorObjectConstPtr& sensor_object) {
   Eigen::MatrixXd global_uncertainty;
   Eigen::VectorXd global_states;
   // global_states: center(2), velocity(2), acceleration(2)
-  global_uncertainty.setIdentity(6, 6);
-  global_states.setZero(6, 1);
+  global_uncertainty.setIdentity(6, 6); //设置为单位阵
+  global_states.setZero(6, 1); //6行1列设置为0
 
   fused_anchor_point_ =
-      sensor_object->GetBaseObject()->anchor_point.cast<double>();
-  fused_velocity_ = sensor_object->GetBaseObject()->velocity.cast<double>();
+      sensor_object->GetBaseObject()->anchor_point.cast<double>(); //测量值的anchor_point
+  fused_velocity_ = sensor_object->GetBaseObject()->velocity.cast<double>(); //测量值的速度
   fused_acceleration_ = Eigen::Vector3d(0, 0, 0);
 
   global_states(0) = sensor_object->GetBaseObject()->anchor_point(0);
@@ -76,11 +76,11 @@ bool KalmanMotionFusion::InitFilter(const SensorObjectConstPtr& sensor_object) {
           ->velocity_uncertainty.topLeftCorner(2, 2)
           .cast<double>();
 
-  if (sensor_object->GetBaseObject()->velocity_converged) {
+  if (sensor_object->GetBaseObject()->velocity_converged) { //速度的估计是否是收敛的
     UpdateSensorHistory(sensor_object->GetSensorType(),
                         sensor_object->GetBaseObject()->velocity.cast<double>(),
                         sensor_object->GetTimestamp());
-  }
+  } //将object属性存入历史队列中
 
   if (!kalman_filter_.Init(global_states, global_uncertainty)) {
     return false;
@@ -129,7 +129,7 @@ void KalmanMotionFusion::UpdateWithoutMeasurement(const std::string& sensor_id,
 void KalmanMotionFusion::UpdateWithMeasurement(
     const SensorObjectConstPtr& measurement, double target_timestamp) {
   fused_anchor_point_ =
-      measurement->GetBaseObject()->anchor_point.cast<double>();
+      measurement->GetBaseObject()->anchor_point.cast<double>(); //??anchor_point是中心点
   fused_velocity_ = measurement->GetBaseObject()->velocity.cast<double>();
   fused_acceleration_ =
       measurement->GetBaseObject()->acceleration.cast<double>();
@@ -250,7 +250,7 @@ void KalmanMotionFusion::MotionFusionWithMeasurement(
   env_uncertainty.setIdentity(6, 6);
   env_uncertainty *= 0.5;
 
-  kalman_filter_.Predict(transform_matrix, env_uncertainty);
+  kalman_filter_.Predict(transform_matrix, env_uncertainty); 
 
   Eigen::Vector3d measured_acceleration = Eigen::Vector3d::Zero();
   measured_acceleration = ComputeAccelerationMeasurement(
@@ -268,7 +268,7 @@ void KalmanMotionFusion::MotionFusionWithMeasurement(
   observation(5) = measured_acceleration(1);
 
   Eigen::MatrixXd r_matrix;
-  r_matrix.setIdentity(6, 6);
+  r_matrix.setIdentity(6, 6); //更新测量协方差阵
   r_matrix.topLeftCorner(2, 2) = measurement->GetBaseObject()
                                      ->center_uncertainty.topLeftCorner(2, 2)
                                      .cast<double>();
@@ -287,7 +287,7 @@ void KalmanMotionFusion::MotionFusionWithMeasurement(
   // Compute pseudo measurement
   Eigen::Vector4d temp_observation = observation.head(4);
   Eigen::Vector4d pseudo_measurement =
-      ComputePseudoMeasurement(temp_observation, measurement->GetSensorType());
+      ComputePseudoMeasurement(temp_observation, measurement->GetSensorType()); //通过其他传感器的历史测量值优化速度测量值
   observation.head(4) = pseudo_measurement;
 
   if (measurement->GetBaseObject()->velocity_converged) {
@@ -308,7 +308,7 @@ void KalmanMotionFusion::MotionFusionWithMeasurement(
          << "," << r_matrix(2, 2) << "," << r_matrix(2, 3) << ","
          << r_matrix(3, 2) << "," << r_matrix(3, 3) << ")";
 
-  kalman_filter_.DeCorrelation(2, 0, 2, 2);
+  kalman_filter_.DeCorrelation(2, 0, 2, 2); //去相关
   kalman_filter_.Correct(observation, r_matrix);
   kalman_filter_.CorrectionBreakdown();
 
@@ -378,20 +378,20 @@ void KalmanMotionFusion::RewardRMatrix(const base::SensorType& sensor_type,
       r_matrix->block<4, 4>(0, 0) *= converged_scale;
     } else {
       r_matrix->setIdentity();
-      r_matrix->block<2, 2>(0, 0) *= converged_scale;
-      r_matrix->block<2, 2>(2, 2) *= unconverged_scale;
+      r_matrix->block<2, 2>(0, 0) *= converged_scale; //位置
+      r_matrix->block<2, 2>(2, 2) *= unconverged_scale; //速度
     }
   } else if (sensor_manager->IsRadar(sensor_type) ||
              sensor_manager->IsCamera(sensor_type)) {
-    r_matrix->block<4, 4>(0, 0) *= 2.0;
+    r_matrix->block<4, 4>(0, 0) *= 2.0; //原始位置,速度的r阵乘以2
     int lidar_history_length =
         GetSensorHistoryLength(base::SensorType::VELODYNE_64);
     if (lidar_history_length > 0) {
-      r_matrix->block<2, 2>(2, 2).setIdentity();
+      r_matrix->block<2, 2>(2, 2).setIdentity(); //速度
       r_matrix->block<2, 2>(2, 2) *= unconverged_scale;
     }
   }
-  r_matrix->block<2, 2>(4, 4) *= 0.5;
+  r_matrix->block<2, 2>(4, 4) *= 0.5; //加速度
 }
 
 Eigen::Vector4d KalmanMotionFusion::ComputePseudoMeasurement(
@@ -421,9 +421,9 @@ Eigen::Vector4d KalmanMotionFusion::ComputePseudoLidarMeasurement(
     const Eigen::Vector4d& measurement) {
   // Initialize status variables
   int trace_count = 0;
-  const float velocity_angle_change_thresh_ = static_cast<float>(M_PI / 20.0);
+  const float velocity_angle_change_thresh_ = static_cast<float>(M_PI / 20.0);//角速度变化阈值
   const float acceleration_angle_change_thresh_ =
-      static_cast<float>(M_PI / 3.0);
+      static_cast<float>(M_PI / 3.0); //角加速度变化阈值
   Eigen::Vector4d pseudo_measurement = measurement;
   Eigen::Vector3d lidar_velocity =
       Eigen::Vector3d(measurement(2), measurement(3), 0);
@@ -440,28 +440,28 @@ Eigen::Vector4d KalmanMotionFusion::ComputePseudoLidarMeasurement(
   for (size_t count = 1; count < history_sensor_type_.size(); ++count) {
     size_t history_index = history_sensor_type_.size() - count;
     base::SensorType& history_type = history_sensor_type_[history_index];
-    if (common::SensorManager::Instance()->IsRadar(history_type)) {
+    if (common::SensorManager::Instance()->IsRadar(history_type)) { //查找radar的历史测量值
       trace_count++;
       Eigen::Vector3d radar_velocity = history_velocity_[history_index];
       double radar_velocity_norm = radar_velocity.norm();
       // Abandon radar history, if their velocity lengths are too different
       if (fabs(radar_velocity_norm - lidar_velocity_norm) >
-          velocity_length_change_thresh_) {
+          velocity_length_change_thresh_) { //5m/s default
         continue;
       }
       // Abandon radar history, if its velocity angle change is too large
       double velocity_angle_change =
-          common::CalculateTheta2DXY(radar_velocity, lidar_velocity);
+          common::CalculateTheta2DXY(radar_velocity, lidar_velocity); //计算两个速度方向的夹角
       if (fabs(velocity_angle_change) > velocity_angle_change_thresh_) {
         continue;
       }
       // Abandon radar history, if its acceleration angle change is too large
       Eigen::Vector3d radar_velocity_project_on_lidar_velocity =
-          common::Calculate2DXYProjectVector(radar_velocity, lidar_velocity);
+          common::Calculate2DXYProjectVector(radar_velocity, lidar_velocity); //radar 速度在lidar方向上的投影向量
       Eigen::Vector3d radar_velocity_project_on_lidar_velocity_gain =
           radar_velocity_project_on_lidar_velocity - lidar_velocity;
       double acceleration_angle_change = common::CalculateTheta2DXY(
-          fused_acceleration, radar_velocity_project_on_lidar_velocity_gain);
+          fused_acceleration, radar_velocity_project_on_lidar_velocity_gain); //角加速度应小于阈值
       if (fabs(acceleration_angle_change) > acceleration_angle_change_thresh_) {
         continue;
       }
@@ -684,12 +684,12 @@ void KalmanMotionFusion::UpdateSensorHistory(
     const base::SensorType& sensor_type, const Eigen::Vector3d& velocity,
     const double& timestamp) {
   int lidar_history_length =
-      GetSensorHistoryLength(base::SensorType::VELODYNE_64);
+      GetSensorHistoryLength(base::SensorType::VELODYNE_64);//Velodyne64传感器用于融合的次数
   int radar_history_length =
       GetSensorHistoryLength(base::SensorType::LONG_RANGE_RADAR);
   if ((lidar_history_length >= s_eval_window_ &&
        radar_history_length >= s_eval_window_) ||
-      history_velocity_.size() > s_history_size_maximum_) {
+      history_velocity_.size() > s_history_size_maximum_) { 
     history_velocity_.pop_front();
     history_timestamp_.pop_front();
     history_sensor_type_.pop_front();

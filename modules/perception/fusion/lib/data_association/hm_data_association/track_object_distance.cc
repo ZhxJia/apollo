@@ -56,11 +56,11 @@ void TrackObjectDistance::GetModified2DRadarBoxVertices(
   for (size_t i = 0; i < 4; ++i) {
     modified_radar_box_vertices[i + 4].z() =
         modified_radar_box_vertices[i].z() + camera_height;
-  }
+  } //将radar物体三维box的高度修改为相机检测的物体的三维box的高度
   radar_box2d_vertices->reserve(radar_box_vertices.size());
   for (const auto& box_vertex_3d : modified_radar_box_vertices) {
     Eigen::Vector4d local_box_vertex =
-        world2camera_pose * box_vertex_3d.homogeneous();
+        world2camera_pose * box_vertex_3d.homogeneous();//齐次坐标
     Eigen::Vector2f temp_vertex =
         camera_intrinsic->Project(local_box_vertex.head(3).cast<float>());
     radar_box2d_vertices->push_back(temp_vertex.cast<double>());
@@ -116,46 +116,46 @@ ProjectionCacheObject* TrackObjectDistance::BuildProjectionCacheObject(
   // 2. compute offset
   double time_diff = camera->GetTimestamp() - lidar->GetTimestamp();
   Eigen::Vector3d offset =
-      lidar->GetBaseObject()->velocity.cast<double>() * time_diff;
+      lidar->GetBaseObject()->velocity.cast<double>() * time_diff; //计算由于Lidar和camera时间差值所噪声的位移差值
   // 3. build projection cache
   const base::PointFCloud& cloud =
       lidar->GetBaseObject()->lidar_supplement.cloud;
-  double width = static_cast<double>(camera_model->get_width());
-  double height = static_cast<double>(camera_model->get_height());
+  double width = static_cast<double>(camera_model->get_width()); //1920
+  double height = static_cast<double>(camera_model->get_height()); //1080
   const int lidar_object_id = lidar->GetBaseObject()->id;
   ProjectionCacheObject* cache_object = projection_cache_.BuildObject(
       measurement_sensor_id, measurement_timestamp, projection_sensor_id,
-      projection_timestamp, lidar_object_id);
+      projection_timestamp, lidar_object_id); //返回对应创建的空object的引用
   if (cache_object == nullptr) {
     AERROR << "Failed to build projection cache object";
     return nullptr;
   }
-  size_t start_ind = projection_cache_.GetPoint2dsSize();
-  size_t end_ind = projection_cache_.GetPoint2dsSize();
+  size_t start_ind = projection_cache_.GetPoint2dsSize();//初始为0
+  size_t end_ind = projection_cache_.GetPoint2dsSize();//初始为0
   float xmin = FLT_MAX;
   float ymin = FLT_MAX;
   float xmax = -FLT_MAX;
   float ymax = -FLT_MAX;
-  // 4. check whether all lidar's 8 3d vertices would projected outside frustum,
+  // 4. check whether all lidar's 8 3d vertices would projected outside frustum, 视锥体
   // if not, build projection object of its cloud and cache it
   // else, build empty projection object and cache it
   bool is_all_lidar_3d_vertices_outside_frustum = false;
-  if (cloud.size() > s_lidar2camera_projection_vertices_check_pts_num_) {
+  if (cloud.size() > s_lidar2camera_projection_vertices_check_pts_num_) { //20
     is_all_lidar_3d_vertices_outside_frustum = true;
     std::vector<Eigen::Vector3d> lidar_box_vertices;
-    GetObjectEightVertices(lidar->GetBaseObject(), &lidar_box_vertices);
+    GetObjectEightVertices(lidar->GetBaseObject(), &lidar_box_vertices); //获取世界坐标系下3dbox的8个顶点
     for (size_t i = 0; i < lidar_box_vertices.size(); ++i) {
       Eigen::Vector3d& vt = lidar_box_vertices[i];
       Eigen::Vector4d project_vt =
           static_cast<Eigen::Matrix<double, 4, 1, 0, 4, 1>>(
               world2camera_pose * Eigen::Vector4d(vt(0) + offset(0),
                                                   vt(1) + offset(1),
-                                                  vt(2) + offset(2), 1.0));
-      if (project_vt(2) <= 0) continue;
+                                                  vt(2) + offset(2), 1.0)); //将box的顶点坐标转化到相机坐标系下
+      if (project_vt(2) <= 0) continue; //忽略相机后面的lidar点 z方向代表相机前向
       Eigen::Vector2f project_vt2f = camera_model->Project(Eigen::Vector3f(
           static_cast<float>(project_vt(0)), static_cast<float>(project_vt(1)),
-          static_cast<float>(project_vt(2))));
-      if (!IsPtInFrustum(project_vt2f, width, height)) continue;
+          static_cast<float>(project_vt(2)))); //将box的顶点坐标投影到图像平面中
+      if (!IsPtInFrustum(project_vt2f, width, height)) continue; //判断点是否位于图像边界内部
       is_all_lidar_3d_vertices_outside_frustum = false;
       break;
     }
@@ -165,7 +165,7 @@ ProjectionCacheObject* TrackObjectDistance::BuildProjectionCacheObject(
   if (!is_all_lidar_3d_vertices_outside_frustum) {
     // 5.1 check whehter downsampling needed
     size_t every_n = 1;
-    if (cloud.size() > s_lidar2camera_projection_downsample_target_pts_num_) {
+    if (cloud.size() > s_lidar2camera_projection_downsample_target_pts_num_) { //点超过100进行下采样
       every_n =
           cloud.size() / s_lidar2camera_projection_downsample_target_pts_num_;
     }
@@ -176,23 +176,23 @@ ProjectionCacheObject* TrackObjectDistance::BuildProjectionCacheObject(
           static_cast<Eigen::Matrix<double, 4, 1, 0, 4, 1>>(
               lidar2camera_pose * Eigen::Vector4d(pt.x + offset(0),
                                                   pt.y + offset(1),
-                                                  pt.z + offset(2), 1.0));
-      if (project_pt(2) <= 0) continue;
+                                                  pt.z + offset(2), 1.0)); //将lidar坐标系的目标点转换到相机坐标系下
+      if (project_pt(2) <= 0) continue; //忽略相机后面的lidar点
       Eigen::Vector2f project_pt2f = camera_model->Project(Eigen::Vector3f(
           static_cast<float>(project_pt(0)), static_cast<float>(project_pt(1)),
-          static_cast<float>(project_pt(2))));
+          static_cast<float>(project_pt(2))));//投影到图像平面
       if (!IsPtInFrustum(project_pt2f, width, height)) continue;
-      if (project_pt2f.x() < xmin) xmin = project_pt2f.x();
-      if (project_pt2f.y() < ymin) ymin = project_pt2f.y();
+      if (project_pt2f.x() < xmin) xmin = project_pt2f.x(); //对于在相机视野内的点
+      if (project_pt2f.y() < ymin) ymin = project_pt2f.y(); //找到这些点在图像平面中的边界
       if (project_pt2f.x() > xmax) xmax = project_pt2f.x();
       if (project_pt2f.y() > ymax) ymax = project_pt2f.y();
-      projection_cache_.AddPoint(project_pt2f);
+      projection_cache_.AddPoint(project_pt2f); //将能够投影到图像平面中的lidar点添加到projection_cache中
     }
   }
   end_ind = projection_cache_.GetPoint2dsSize();
   cache_object->SetStartInd(start_ind);
-  cache_object->SetEndInd(end_ind);
-  base::BBox2DF box = base::BBox2DF(xmin, ymin, xmax, ymax);
+  cache_object->SetEndInd(end_ind); //获取该cache object对应的2d投影点对应的起止索引
+  base::BBox2DF box = base::BBox2DF(xmin, ymin, xmax, ymax); //获取这些点的边界框
   cache_object->SetBox(box);
   return cache_object;
 }
@@ -213,14 +213,14 @@ ProjectionCacheObject* TrackObjectDistance::QueryProjectionCacheObject(
   const int lidar_object_id = lidar->GetBaseObject()->id;
   ProjectionCacheObject* cache_object = projection_cache_.QueryObject(
       measurement_sensor_id, measurement_timestamp, projection_sensor_id,
-      projection_timestamp, lidar_object_id);
+      projection_timestamp, lidar_object_id);//
   if (cache_object != nullptr) return cache_object;
   // 2. if query failed, build projection and cache it
   return BuildProjectionCacheObject(
       lidar, camera, camera_model, measurement_sensor_id, measurement_timestamp,
       projection_sensor_id, projection_timestamp);
 }
-
+//@brief: 将lidar检测物体中心投影到相机坐标系下
 void TrackObjectDistance::QueryProjectedVeloCtOnCamera(
     const SensorObjectConstPtr& velodyne64, const SensorObjectConstPtr& camera,
     const Eigen::Matrix4d& lidar2camera_pose, Eigen::Vector3d* projected_ct) {
@@ -232,7 +232,7 @@ void TrackObjectDistance::QueryProjectedVeloCtOnCamera(
       static_cast<Eigen::Matrix<double, 4, 1, 0, 4, 1>>(
           lidar2camera_pose * Eigen::Vector4d(velo_ct[0] + offset[0],
                                               velo_ct[1] + offset[1],
-                                              velo_ct[2] + offset[2], 1.0));
+                                              velo_ct[2] + offset[2], 1.0)); //??这里的变换矩阵不应该是世界坐标系到相机坐标系吗
   *projected_ct = projected_ct_4d.head(3);
 }
 
@@ -274,7 +274,7 @@ bool TrackObjectDistance::LidarCameraCenterDistanceExceedDynamicThreshold(
     const base::PointF& pt = cloud.at(0);
     local_distance = std::sqrt(pt.x * pt.x + pt.y * pt.y);
   }
-  double dynamic_threshold = 5 + 0.15 * local_distance;
+  double dynamic_threshold = 5 + 0.15 * local_distance; //物体离车辆越远,对应的阈值越大
   if (center_distance > dynamic_threshold) {
     return true;
   }
@@ -291,14 +291,14 @@ float TrackObjectDistance::Compute(const TrackPtr& fused_track,
     AERROR << "fused object is nullptr";
     return (std::numeric_limits<float>::max)();
   }
-  Eigen::Vector3d* ref_point = options.ref_point;
+  Eigen::Vector3d* ref_point = options.ref_point; //zeros
   if (ref_point == nullptr) {
     AERROR << "reference point is nullptr";
     return (std::numeric_limits<float>::max)();
   }
   float distance = (std::numeric_limits<float>::max)();
   float min_distance = (std::numeric_limits<float>::max)();
-  SensorObjectConstPtr lidar_object = fused_track->GetLatestLidarObject();
+  SensorObjectConstPtr lidar_object = fused_track->GetLatestLidarObject(); //获取各个传感器融跟踪列表中的最新物体
   SensorObjectConstPtr radar_object = fused_track->GetLatestRadarObject();
   SensorObjectConstPtr camera_object = fused_track->GetLatestCameraObject();
   if (IsLidar(sensor_object)) {
@@ -312,11 +312,11 @@ float TrackObjectDistance::Compute(const TrackPtr& fused_track,
     }
     if (camera_object != nullptr) {
       bool is_lidar_track_id_consistent =
-          IsTrackIdConsistent(lidar_object, sensor_object);
+          IsTrackIdConsistent(lidar_object, sensor_object); //首先判断fusion中的lidar_object的trackid是否与测量sensor_object的一致，即判断是否lidar自身传感器的跟踪是连续的
       distance = ComputeLidarCamera(sensor_object, camera_object, true,
                                     is_lidar_track_id_consistent);
       min_distance = std::min(distance, min_distance);
-    }
+    } //min_distance为前测量值与对应三个传感器的测量距离的最小值
   } else if (IsRadar(sensor_object)) {
     if (lidar_object != nullptr) {
       distance = ComputeLidarRadar(lidar_object, sensor_object, *ref_point);
@@ -333,7 +333,7 @@ float TrackObjectDistance::Compute(const TrackPtr& fused_track,
   } else if (IsCamera(sensor_object)) {
     if (lidar_object != nullptr) {
       bool is_camera_track_id_consistent =
-          IsTrackIdConsistent(camera_object, sensor_object);
+          IsTrackIdConsistent(camera_object, sensor_object); //判断本身相机的跟踪是否是连续的
       distance = ComputeLidarCamera(lidar_object, sensor_object, false,
                                     is_camera_track_id_consistent);
       min_distance = std::min(distance, min_distance);
@@ -360,11 +360,11 @@ float TrackObjectDistance::ComputeLidarLidar(
     ADEBUG << "center distance exceed lidar2lidar tight threshold: "
            << "center_dist@" << center_distance << ", "
            << "tight_threh@"
-           << s_lidar2lidar_association_center_dist_threshold_;
+           << s_lidar2lidar_association_center_dist_threshold_;//10.0
     return (std::numeric_limits<float>::max)();
   }
   float distance =
-      ComputePolygonDistance3d(fused_object, sensor_object, ref_pos, range);
+      ComputePolygonDistance3d(fused_object, sensor_object, ref_pos, range); //range = 3
   ADEBUG << "ComputeLidarLidar distance: " << distance;
   return distance;
 }
@@ -373,14 +373,14 @@ float TrackObjectDistance::ComputeLidarLidar(
 // radar observation
 // @return distance of velodyne64 vs. radar
 float TrackObjectDistance::ComputeLidarRadar(
-    const SensorObjectConstPtr& fused_object,
+    const SensorObjectCons从tPtr& fused_object,
     const SensorObjectPtr& sensor_object, const Eigen::Vector3d& ref_pos,
     int range) {
   double center_distance = (sensor_object->GetBaseObject()->center -
                             fused_object->GetBaseObject()->center)
                                .head(2)
                                .norm();
-  if (center_distance > s_lidar2radar_association_center_dist_threshold_) {
+  if (center_distance > s_lidar2radar_association_center_dist_threshold_) { //10
     ADEBUG << "center distance exceed lidar2radar tight threshold: "
            << "center_dist@" << center_distance << ", "
            << "tight_threh@"
@@ -422,12 +422,12 @@ float TrackObjectDistance::ComputeRadarRadar(
 float TrackObjectDistance::ComputeLidarCamera(
     const SensorObjectConstPtr& lidar, const SensorObjectConstPtr& camera,
     const bool measurement_is_lidar, const bool is_track_id_consistent) {
-  if (!is_track_id_consistent) {
+  if (!is_track_id_consistent) { //如果该物体在lidar自身传感器上的跟踪不是连续的
     if (LidarCameraCenterDistanceExceedDynamicThreshold(lidar, camera)) {
-      return distance_thresh_;
+      return distance_thresh_; //若track_id不一致，则当lidar和camera之间的中心距离大于动态阈值，则返回4.0
     }
   }
-  float distance = distance_thresh_;
+  float distance = distance_thresh_; //4.0
   // 1. get camera intrinsic and pose
   base::BaseCameraModelPtr camera_model = QueryCameraModel(camera);
   if (camera_model == nullptr) {
@@ -435,7 +435,7 @@ float TrackObjectDistance::ComputeLidarCamera(
     return distance;
   }
   Eigen::Matrix4d world2camera_pose;
-  if (!QueryWorld2CameraPose(camera, &world2camera_pose)) {
+  if (!QueryWorld2CameraPose(camera, &world2camera_pose)) { //传感器到世界坐标系转换矩阵存储与每帧的帧头中
     AERROR << "Failed to query camera pose";
     return distance;
   }
@@ -446,7 +446,7 @@ float TrackObjectDistance::ComputeLidarCamera(
   }
   Eigen::Matrix4d lidar2camera_pose =
       static_cast<Eigen::Matrix<double, 4, 4, 0, 4, 4>>(world2camera_pose *
-                                                        lidar2world_pose);
+                                                        lidar2world_pose); //可以获得lidar到相机坐标系的变换矩阵
   // 2. compute distance of camera vs. lidar observation
   const base::PointFCloud& cloud =
       lidar->GetBaseObject()->lidar_supplement.cloud;
@@ -460,22 +460,22 @@ float TrackObjectDistance::ComputeLidarCamera(
     // 2.1 if cloud is not empty, calculate distance according to pts box
     // similarity
     ProjectionCacheObject* cache_object = QueryProjectionCacheObject(
-        lidar, camera, camera_model, measurement_is_lidar);
+        lidar, camera, camera_model, measurement_is_lidar);//物体点云在相机图像平面的2d投影
     if (cache_object == nullptr) {
       AERROR << "Failed to query projection cached object";
       return distance;
     }
     double similarity =
-        ComputePtsBoxSimilarity(&projection_cache_, cache_object, camera_bbox);
+        ComputePtsBoxSimilarity(&projection_cache_, cache_object, camera_bbox); //计算cache object和camera object的相似性
     distance =
         distance_thresh_ * ((1.0f - static_cast<float>(similarity)) /
-                            (1.0f - vc_similarity2distance_penalize_thresh_));
+                            (1.0f - vc_similarity2distance_penalize_thresh_)); //0.07 lidar和camera相似距离计算的惩罚阈值
   } else {
-    // 2.2 if cloud is empty, calculate distance according to ct diff
+    // 2.2 if cloud is empty, calculate distance according to ct diff //?? lidar检测物体的点云为什么会是空的
     Eigen::Vector3d projected_velo_ct;
     QueryProjectedVeloCtOnCamera(lidar, camera, lidar2camera_pose,
-                                 &projected_velo_ct);
-    if (projected_velo_ct[2] > 0) {
+                                 &projected_velo_ct); //velo 我猜是指velodyne激光雷达
+    if (projected_velo_ct[2] > 0) { //lidar检测物体位于前方
       Eigen::Vector2f project_pt2f = camera_model->Project(
           Eigen::Vector3f(static_cast<float>(projected_velo_ct[0]),
                           static_cast<float>(projected_velo_ct[1]),
@@ -483,7 +483,7 @@ float TrackObjectDistance::ComputeLidarCamera(
       Eigen::Vector2d project_pt2d = project_pt2f.cast<double>();
       Eigen::Vector2d ct_diff = project_pt2d - box2d_ct;
       distance =
-          static_cast<float>(ct_diff.norm()) * vc_diff2distance_scale_factor_;
+          static_cast<float>(ct_diff.norm()) * vc_diff2distance_scale_factor_; //0.8距离尺度因子 单位为像素
     } else {
       distance = std::numeric_limits<float>::max();
     }
@@ -508,7 +508,7 @@ float TrackObjectDistance::ComputeRadarCamera(
   if (!QueryWorld2CameraPose(camera, &world2camera_pose)) {
     return distance;
   }
-  // get camera useful information
+  // get camera useful information 先计算camera有用的相关信息
   const base::BBox2DF& camera_bbox =
       camera->GetBaseObject()->camera_supplement.box;
   const base::Point2DF camera_bbox_ct = camera_bbox.Center();
@@ -516,39 +516,39 @@ float TrackObjectDistance::ComputeRadarCamera(
       Eigen::Vector2d(camera_bbox_ct.x, camera_bbox_ct.y);
   Eigen::Vector2d box2d_size = Eigen::Vector2d(
       camera_bbox.xmax - camera_bbox.xmin, camera_bbox.ymax - camera_bbox.ymin);
-  box2d_size = box2d_size.cwiseMax(rc_min_box_size_);
+  box2d_size = box2d_size.cwiseMax(rc_min_box_size_); //最小尺寸限制25*25
   double width = static_cast<double>(camera_model->get_width());
   double height = static_cast<double>(camera_model->get_height());
-  // get radar useful information
-  double time_diff = camera->GetTimestamp() - radar->GetTimestamp();
+  // get radar useful information 再计算radar有用的相关信息
+  double time_diff = camera->GetTimestamp() - radar->GetTimestamp(); //因为radar为新检测到的物体,camera为跟踪列表中的,所以camera检测时间更早
   Eigen::Vector3d offset =
       radar->GetBaseObject()->velocity.cast<double>() * time_diff;
   offset.setZero();
   Eigen::Vector3d radar_ct = radar->GetBaseObject()->center + offset;
   Eigen::Vector4d local_pt = static_cast<Eigen::Matrix<double, 4, 1, 0, 4, 1>>(
       world2camera_pose *
-      Eigen::Vector4d(radar_ct[0], radar_ct[1], radar_ct[2], 1.0));
+      Eigen::Vector4d(radar_ct[0], radar_ct[1], radar_ct[2], 1.0));//将radar检测的物体中心转换到相机坐标系下
   std::vector<Eigen::Vector3d> radar_box_vertices;
   GetObjectEightVertices(radar->GetBaseObject(), &radar_box_vertices);
   std::vector<Eigen::Vector2d> radar_box2d_vertices;
   GetModified2DRadarBoxVertices(radar_box_vertices, camera, camera_model,
-                                world2camera_pose, &radar_box2d_vertices);
+                                world2camera_pose, &radar_box2d_vertices);//将radar的得到的3dbox首先根据相机检测的3dbox的高度进行修改,然后投影到2d图像平面中
   // compute similarity
   double fused_similarity = 0.0;
-  if (local_pt[2] > 0) {
+  if (local_pt[2] > 0) { //要求radar检测的物体在相机的前方视野中
     Eigen::Vector3f pt3f;
     pt3f << camera_model->Project(Eigen::Vector3f(
         static_cast<float>(local_pt[0]), static_cast<float>(local_pt[1]),
         static_cast<float>(local_pt[2]))),
-        static_cast<float>(local_pt[2]);
+        static_cast<float>(local_pt[2]);//投影到图像平面的物体中心,保留深度信息
     Eigen::Vector3d pt3d = pt3f.cast<double>();
-    if (IsPtInFrustum(pt3d, width, height)) {
+    if (IsPtInFrustum(pt3d, width, height)) { //判断该radar检测的点是否位于相机视野内
       // compute similarity on x direction
       double x_similarity = ComputeRadarCameraXSimilarity(
-          pt3d.x(), box2d_ct.x(), box2d_size.x(), rc_x_similarity_params_);
+          pt3d.x(), box2d_ct.x(), box2d_size.x(), rc_x_similarity_params_);//概率区间(0,0.9)
       // compute similarity on y direction
       double y_similarity = ComputeRadarCameraYSimilarity(
-          pt3d.y(), box2d_ct.y(), box2d_size.y(), rc_y_similarity_params_);
+          pt3d.y(), box2d_ct.y(), box2d_size.y(), rc_y_similarity_params_);//概率区间(0.5,0.6)
       // compute similarity on height
       // use camera car height to modify the radar location
       // double h_similarity = ComputeRadarCameraHSimilarity(
@@ -560,10 +560,10 @@ float TrackObjectDistance::ComputeRadarCamera(
       //     rc_w_similarity_params_);
       // compute similarity on offset 3d
       double loc_similarity = ComputeRadarCameraLocSimilarity(
-          radar_ct, camera, world2camera_pose, rc_loc_similarity_params_);
+          radar_ct, camera, world2camera_pose, rc_loc_similarity_params_); //概率区间(0,0.7)
       // compute similarity on velocity
       double velocity_similarity =
-          ComputeRadarCameraVelocitySimilarity(radar, camera);
+          ComputeRadarCameraVelocitySimilarity(radar, camera);//概率区间(0,0.9)
       // fuse similarity
       std::vector<double> multiple_similarities = {
           x_similarity, y_similarity, loc_similarity, velocity_similarity
@@ -717,7 +717,7 @@ float TrackObjectDistance::ComputePolygonDistance3d(
   double fusion_timestamp = fused_object->GetTimestamp();
   double sensor_timestamp = sensor_object->GetTimestamp();
   double time_diff = sensor_timestamp - fusion_timestamp;
-  fused_poly_center(0) += obj_f->velocity(0) * time_diff;
+  fused_poly_center(0) += obj_f->velocity(0) * time_diff; //恒速度
   fused_poly_center(1) += obj_f->velocity(1) * time_diff;
   float distance =
       ComputeEuclideanDistance(fused_poly_center, sensor_poly_center);
@@ -730,7 +730,7 @@ float TrackObjectDistance::ComputeEuclideanDistance(
     const Eigen::Vector3d& des, const Eigen::Vector3d& src) {
   Eigen::Vector3d diff_pos = des - src;
   float distance = static_cast<float>(
-      std::sqrt(diff_pos.head(2).cwiseProduct(diff_pos.head(2)).sum()));
+      std::sqrt(diff_pos.head(2).cwiseProduct(diff_pos.head(2)).sum()));//sqrt(x^2+y^2)
   return distance;
 }
 
@@ -766,7 +766,7 @@ bool TrackObjectDistance::ComputePolygonCenter(
     distance2idx.insert(std::make_pair(distance, idx));
   }
   int size = static_cast<int>(distance2idx.size());
-  int nu = std::max(range, size / range + 1);
+  int nu = std::max(range, size / range + 1);//range 3
   nu = std::min(nu, size);
   int count = 0;
   std::map<double, int>::iterator it = distance2idx.begin();

@@ -50,7 +50,7 @@ class TrackObjectDistance {
     distance_thresh_ = distance_thresh;
   }
   void ResetProjectionCache(std::string sensor_id, double timestamp) {
-    projection_cache_.Reset(sensor_id, timestamp);
+    projection_cache_.Reset(sensor_id, timestamp); //HMTrackersObjectsAssociation::Associate()处更新
   }
 
   // @brief: compute the distance between input fused track and sensor object

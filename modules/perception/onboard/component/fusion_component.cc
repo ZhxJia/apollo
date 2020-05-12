@@ -36,17 +36,17 @@ bool FusionComponent::Init() {
   AINFO << "Radarr Component Configs: " << comp_config.DebugString();
 
   // to load component configs
-  fusion_method_ = comp_config.fusion_method();
-  fusion_main_sensor_ = comp_config.fusion_main_sensor();
-  object_in_roi_check_ = comp_config.object_in_roi_check();
-  radius_for_roi_object_check_ = comp_config.radius_for_roi_object_check();
+  fusion_method_ = comp_config.fusion_method(); //"ProbabilisticFusion"
+  fusion_main_sensor_ = comp_config.fusion_main_sensor(); //"velodyne128"
+  object_in_roi_check_ = comp_config.object_in_roi_check(); //true
+  radius_for_roi_object_check_ = comp_config.radius_for_roi_object_check(); //120
 
   // init algorithm plugin
   CHECK(InitAlgorithmPlugin()) << "Failed to init algorithm plugin.";
   writer_ = node_->CreateWriter<PerceptionObstacles>(
-      comp_config.output_obstacles_channel_name());
+      comp_config.output_obstacles_channel_name()); //"/apollo/perception/obstacles"
   inner_writer_ = node_->CreateWriter<SensorFrameMessage>(
-      comp_config.output_viz_fused_content_channel_name());
+      comp_config.output_viz_fused_content_channel_name()); //"/perception/inner/visualization/FusedObjects"
   return true;
 }
 
@@ -83,8 +83,8 @@ bool FusionComponent::Proc(const std::shared_ptr<SensorFrameMessage>& message) {
 bool FusionComponent::InitAlgorithmPlugin() {
   fusion_.reset(new fusion::ObstacleMultiSensorFusion());
   fusion::ObstacleMultiSensorFusionParam param;
-  param.main_sensor = fusion_main_sensor_;
-  param.fusion_method = fusion_method_;
+  param.main_sensor = fusion_main_sensor_; //velodyne128
+  param.fusion_method = fusion_method_; //ProbabilisticFusion
   CHECK(fusion_->Init(param)) << "Failed to init ObstacleMultiSensorFusion";
 
   if (FLAGS_obs_enable_hdmap_input && object_in_roi_check_) {

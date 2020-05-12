@@ -25,21 +25,21 @@
 namespace apollo {
 namespace perception {
 namespace fusion {
-
+//@brief: 获取世界坐标系box的8个顶点
 void GetObjectEightVertices(std::shared_ptr<const base::Object> obj,
                             std::vector<Eigen::Vector3d>* vertices) {
   vertices->clear();
   vertices->resize(8);
   Eigen::Vector3d center = obj->center;
   Eigen::Vector2d dir = obj->direction.head(2).cast<double>();
-  dir.normalize();
+  dir.normalize(); //theta = arctan(dir[1]/dir[0])  normalize -> (cos(theta),sin(theta))
   Eigen::Vector2d orth_dir(-dir.y(), dir.x());
   Eigen::Vector2d delta_x = dir * obj->size(0) * 0.5;
   Eigen::Vector2d delta_y = orth_dir * obj->size(1) * 0.5;
 
   // lower four points
   center.z() -= obj->size(2) * 0.5;
-  (*vertices)[0] = center, (*vertices)[0].head(2) += (-delta_x - delta_y);
+  (*vertices)[0] = center, (*vertices)[0].head(2) += (-delta_x - delta_y); 
   (*vertices)[1] = center, (*vertices)[1].head(2) += (-delta_x + delta_y);
   (*vertices)[2] = center, (*vertices)[2].head(2) += (delta_x + delta_y);
   (*vertices)[3] = center, (*vertices)[3].head(2) += (delta_x - delta_y);
@@ -97,10 +97,10 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
   double height = static_cast<double>(camera_model->get_height());
 
   double time_diff =
-      camera_ts - sensor_object->GetBaseObject()->latest_tracked_time;
+      camera_ts - sensor_object->GetBaseObject()->latest_tracked_time; //当前camera检测物体的时间戳和lidar或radar最近一次跟踪的时间戳
   Eigen::Vector3f offset =
       sensor_object->GetBaseObject()->velocity * static_cast<float>(time_diff);
-  if (!motion_compensation) {
+  if (!motion_compensation) { //lidar true  radar false
     offset.setZero();
   }
   // 2.compute distance
@@ -108,7 +108,7 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
       sensor_object->GetBaseObject()->lidar_supplement.cloud_world;
   Eigen::Vector3d center = sensor_object->GetBaseObject()->center;
   Eigen::Vector2d center2d;
-  if (!Pt3dToCamera2d(center, world2sensor_pose, camera_model, &center2d)) {
+  if (!Pt3dToCamera2d(center, world2sensor_pose, camera_model, &center2d)) { //将3d点投影到图像2d平面中
     return in_view_ratio;
   }
   double obj_length = sensor_object->GetBaseObject()->size(0);
@@ -127,7 +127,7 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
       if (flag && IsPtInFrustum(pt2d, width, height)) {
         ++in_view_point_num;
       }
-    }
+    } //判断在相机视场中物体点云 点的数量
     in_view_ratio = static_cast<float>(in_view_point_num / point_num);
     if (all_in) {
       in_view_ratio = (in_view_point_num == point_num) ? 1.0 : 0.0;
@@ -155,16 +155,16 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
     for (const auto& box2d_v : box2d_vs) {
       top_left = top_left.cwiseMin(box2d_v.cast<double>());
       bottom_right = bottom_right.cwiseMax(box2d_v.cast<double>());
-    }
+    } //找到二维边界框
     Eigen::Vector2d box_size = bottom_right - top_left;
     Eigen::Vector2d bound_top_left =
         top_left.cwiseMax(Eigen::Vector2d(0.0, 0.0));
     Eigen::Vector2d bound_bottom_right =
-        bottom_right.cwiseMin(Eigen::Vector2d(width, height));
+        bottom_right.cwiseMin(Eigen::Vector2d(width, height)); //限制边界框大小
     Eigen::Vector2d bound_box_size = bound_bottom_right - bound_top_left;
-    if ((bound_box_size.array() > 0.0).all()) {
+    if ((bound_box_size.array() > 0.0).all()) { //判断边界的尺寸有效
       in_view_ratio =
-          static_cast<float>(bound_box_size.prod() / box_size.prod());
+          static_cast<float>(bound_box_size.prod() / box_size.prod());//在相机视野内的边界框面积/原边界框面积
     } else {
       in_view_ratio = 0.0;
     }
@@ -183,8 +183,8 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
   // compute distance score, when object is too far from camera
   // the camera is hard to detect object
   // TODO(yuantingrong):
-  // maximum camera detection distance parameters, hard code
-  const double max_dist = camera_max_dist;
+  // maximum camera detection distance parameters, hard code 硬编码是指在软件设计中直接给程序编码
+  const double max_dist = camera_max_dist; //对应该种类型相机的最大有效检测距离
   // 1 nearly 2m buffer
   const double dist_slope = 0.25;
   auto sigmoid_like_fun = [max_dist, dist_slope](double obj_dist) {
@@ -192,9 +192,9 @@ float ObjectInCameraView(SensorObjectConstPtr sensor_object,
     return 0.5 - 0.5 * x * dist_slope /
                      std::sqrt(1 + x * x * dist_slope * dist_slope);
   };
-  Eigen::Vector4d center3d_local = world2sensor_pose * center.homogeneous();
-  double dist_to_camera = center3d_local.z();
-  return static_cast<float>(in_view_ratio * sigmoid_like_fun(dist_to_camera));
+  Eigen::Vector4d center3d_local = world2sensor_pose * center.homogeneous(); //物体的中心在相机坐标系下的位置
+  double dist_to_camera = center3d_local.z(); //距离
+  return static_cast<float>(in_view_ratio * sigmoid_like_fun(dist_to_camera)); //距离越远对应的可视化程度应该越低
 }
 
 }  // namespace fusion
