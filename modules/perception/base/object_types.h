@@ -72,7 +72,7 @@ enum class ObjectSubType {
   MOTORCYCLIST = 8,
   TRICYCLIST = 9,
   PEDESTRIAN = 10,
-  TRAFFICCONE = 11,
+  TRAFFICCONE = 11,  //交通路标
   MAX_OBJECT_TYPE = 12,
 };
 

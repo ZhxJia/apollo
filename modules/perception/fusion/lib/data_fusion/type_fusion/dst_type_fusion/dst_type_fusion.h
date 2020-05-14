@@ -30,15 +30,15 @@ namespace fusion {
 struct DstMaps {
   // dst hypothesis types
   enum {
-    PEDESTRIAN = (1 << 0),
-    BICYCLE = (1 << 1),
-    VEHICLE = (1 << 2),
-    OTHERS_MOVABLE = (1 << 3),
-    OTHERS_UNMOVABLE = (1 << 4)
+    PEDESTRIAN = (1 << 0), //1      0000 0001
+    BICYCLE = (1 << 1), //2         0000 0010
+    VEHICLE = (1 << 2), //4         0000 0100
+    OTHERS_MOVABLE = (1 << 3), //8  0000 1000
+    OTHERS_UNMOVABLE = (1 << 4)//16 0001 0000 
   };
   enum {
-    OTHERS = (OTHERS_MOVABLE | OTHERS_UNMOVABLE),
-    UNKNOWN = (PEDESTRIAN | BICYCLE | VEHICLE | OTHERS)
+    OTHERS = (OTHERS_MOVABLE | OTHERS_UNMOVABLE),//24 0001 1000
+    UNKNOWN = (PEDESTRIAN | BICYCLE | VEHICLE | OTHERS)//31 0001 1111
   };
 
   std::vector<uint64_t> fod_subsets_ = {

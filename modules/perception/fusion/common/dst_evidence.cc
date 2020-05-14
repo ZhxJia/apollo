@@ -375,7 +375,7 @@ Dst operator+(const Dst &lhs, const Dst &rhs) {
   for (size_t i = 0; i < resbba_vec_.size(); ++i) {
     const auto &combination_pairs = combination_relations[i];
     // AINFO << "pairs size: " << combination_pairs.size();
-    double &belief_mass = resbba_vec_[i];
+    double &belief_mass = resbba_vec_[i]; //交集为i的所有subset对相乘叠加作为索引i的bba_vec
     belief_mass = 0.0;
     for (auto combination_pair : combination_pairs) {
       // AINFO << boost::format("(%d %d)") % combination_pair.first

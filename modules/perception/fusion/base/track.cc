@@ -28,7 +28,7 @@ Track::Track() { fused_object_.reset(new FusedObject()); }
 
 bool Track::Initialize(SensorObjectPtr obj, bool is_background) {
   Reset();
-  int track_id = static_cast<int>(GenerateNewTrackId());
+  int track_id = static_cast<int>(GenerateNewTrackId()); //创建新id
   is_background_ = is_background;
   std::shared_ptr<base::Object> fused_base_obj = fused_object_->GetBaseObject();
   std::shared_ptr<const base::Object> sensor_base_obj = obj->GetBaseObject();
@@ -127,20 +127,20 @@ void Track::UpdateWithSensorObject(const SensorObjectPtr& obj) {
     return;
   }
   UpdateSensorObject(objects, obj);
-  double time_diff = obj->GetTimestamp() - fused_object_->GetTimestamp();
-  tracking_period_ += time_diff;
+  double time_diff = obj->GetTimestamp() - fused_object_->GetTimestamp(); //当前测量的时间戳-该track上一时刻跟踪的物体的时间戳
+  tracking_period_ += time_diff;//跟踪时长
 
   UpdateSensorObjectWithMeasurement(&lidar_objects_, sensor_id,
                                     obj->GetTimestamp(),
-                                    s_max_lidar_invisible_period_);
+                                    s_max_lidar_invisible_period_); //0.25s
   UpdateSensorObjectWithMeasurement(&radar_objects_, sensor_id,
                                     obj->GetTimestamp(),
-                                    s_max_radar_invisible_period_);
+                                    s_max_radar_invisible_period_); //0.50
   UpdateSensorObjectWithMeasurement(&camera_objects_, sensor_id,
                                     obj->GetTimestamp(),
-                                    s_max_camera_invisible_period_);
+                                    s_max_camera_invisible_period_); //0.75
 
-  if (is_background_) {
+  if (is_background_) { //前景融合初始化为false　背景融合初始化track时为true
     return UpdateWithSensorObjectForBackground(obj);
   }
 
@@ -162,7 +162,7 @@ void Track::UpdateWithoutSensorObject(const std::string& sensor_id,
                                        measurement_timestamp,
                                        s_max_camera_invisible_period_);
 
-  UpdateSupplementState();
+  UpdateSupplementState(); //src_object = nullptr
   is_alive_ = (!lidar_objects_.empty()) || (!radar_objects_.empty()) ||
               (!camera_objects_.empty());
 }
@@ -193,10 +193,10 @@ void Track::UpdateSensorObjectWithMeasurement(SensorId2ObjectMap* objects,
                                               double measurement_timestamp,
                                               double max_invisible_period) {
   for (auto it = objects->begin(); it != objects->end();) {
-    if (it->first != sensor_id) {
+    if (it->first != sensor_id) { //测量传感器id不等于该类传感器历史测量的传感器id
       double period = measurement_timestamp - it->second->GetTimestamp();
-      if (period > max_invisible_period) {
-        it->second = nullptr;
+      if (period > max_invisible_period) { //lidar 0.25s radar 0.5s camera 0.75s
+        it->second = nullptr; //如果超出对应时间间隔未有对应的测量值匹配,将原object直接移除
         it = objects->erase(it);
       } else {
         ++it;
@@ -281,9 +281,9 @@ void Track::UpdateWithSensorObjectForBackground(const SensorObjectPtr& obj) {
       fused_object_->GetBaseObject();
   std::shared_ptr<const base::Object> measurement_base_object =
       obj->GetBaseObject();
-  int track_id = fused_base_object->track_id;
+  int track_id = fused_base_object->track_id; //暂存track_id
   *fused_base_object = *measurement_base_object;
-  fused_base_object->track_id = track_id;
+  fused_base_object->track_id = track_id; //track_id不用measurement的
 }
 
 void Track::UpdateWithoutSensorObjectForBackground(

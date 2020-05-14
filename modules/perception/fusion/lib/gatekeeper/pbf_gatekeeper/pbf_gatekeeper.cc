@@ -50,7 +50,7 @@ bool PbfGatekeeper::Init() {
   params_.publish_if_has_lidar = params.publish_if_has_lidar();
   params_.publish_if_has_radar = params.publish_if_has_radar();
   params_.publish_if_has_camera = params.publish_if_has_camera();
-  params_.use_camera_3d = params.use_camera_3d();
+  params_.use_camera_3d = params.use_camera_3d(); //true
   params_.min_radar_confident_distance = params.min_radar_confident_distance();
   params_.max_radar_confident_angle = params.max_radar_confident_angle();
   params_.min_camera_publish_distance = params.min_camera_publish_distance();
@@ -66,14 +66,14 @@ bool PbfGatekeeper::Init() {
 std::string PbfGatekeeper::Name() const { return "PbfGatekeeper"; }
 
 bool PbfGatekeeper::AbleToPublish(const TrackPtr &track) {
-  bool invisible_in_lidar = !(track->IsLidarVisible());
+  bool invisible_in_lidar = !(track->IsLidarVisible());　//lidar目前对该track存在中断
   bool invisible_in_radar = !(track->IsRadarVisible());
-  bool invisible_in_camera = !(track->IsCameraVisible());
+  bool invisible_in_camera = !(track->IsCameraVisible()); //camera目前跟踪存在中断
   if (invisible_in_lidar && invisible_in_radar &&
       (!params_.use_camera_3d || invisible_in_camera)) {
     auto sensor_obj = track->GetFusedObject();
     if (sensor_obj != nullptr && sensor_obj->GetBaseObject()->sub_type !=
-                                     base::ObjectSubType::TRAFFICCONE) {
+                                     base::ObjectSubType::TRAFFICCONE) { //交通路标
       return false;
     }
   }
@@ -81,20 +81,20 @@ bool PbfGatekeeper::AbleToPublish(const TrackPtr &track) {
 
   // use thread-safe localtime_r instead of localtime
   struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
-  bool is_night = (timeinfo.tm_hour >= 23);
+  localtime_r(&rawtime, &timeinfo); //localtime用来获取系统时间，精度为秒
+  bool is_night = (timeinfo.tm_hour >= 23); //晚上
   if (!LidarAbleToPublish(track) && !RadarAbleToPublish(track, is_night) &&
       !CameraAbleToPublish(track, is_night)) {
     return false;
   }
 
   track->AddTrackedTimes();
-  if (params_.use_track_time_pub_strategy &&
+  if (params_.use_track_time_pub_strategy && //true
       track->GetTrackedTimes() <=
-          static_cast<size_t>(params_.pub_track_time_thresh)) {
+          static_cast<size_t>(params_.pub_track_time_thresh)) { //3 
     return false;
   }
-  return true;
+  return true; //表明该track已经由三次被正常跟踪了,可以使用了
 }
 
 bool PbfGatekeeper::LidarAbleToPublish(const TrackPtr &track) {
@@ -161,9 +161,9 @@ bool PbfGatekeeper::RadarAbleToPublish(const TrackPtr &track, bool is_night) {
              << " track_id: " << track->GetTrackId()
              << " exist_prob: " << track->GetExistanceProb();
       if (radar_object->GetBaseObject()->radar_supplement.range >
-              params_.min_radar_confident_distance &&
+              params_.min_radar_confident_distance &&   //40
           (radar_object->GetBaseObject()->velocity.norm() > 4.0 ||
-           track->GetExistanceProb() > params_.radar_existance_threshold)) {
+           track->GetExistanceProb() > params_.radar_existance_threshold)) { //0.9
         return true;
       }
     }
@@ -181,16 +181,16 @@ bool PbfGatekeeper::CameraAbleToPublish(const TrackPtr &track, bool is_night) {
       iter != camera_objects.end() && params_.use_camera_3d && !is_night) {
     SensorObjectConstPtr camera_object = iter->second;
     double range =
-        camera_object->GetBaseObject()->camera_supplement.local_center.norm();
-    // If sub_type of object is traffic cone publish it regardless of range
+        camera_object->GetBaseObject()->camera_supplement.local_center.norm(); //物体在相机坐标系下的距离
+    // If sub_type of object is traffic cone publish it regardless of range 检测物体类型为交通锥无视范围也要发布
     if ((camera_object->GetBaseObject()->sub_type ==
          base::ObjectSubType::TRAFFICCONE) ||
-        (range >= params_.min_camera_publish_distance ||
+        (range >= params_.min_camera_publish_distance || //50
          ((camera_object->GetBaseObject()->type ==
            base::ObjectType::UNKNOWN_UNMOVABLE) &&
           (range >= params_.min_camera_publish_distance)))) {
       double exist_prob = track->GetExistanceProb();
-      if (exist_prob > params_.existance_threshold) {
+      if (exist_prob > params_.existance_threshold) { 0.7
         static int cnt_cam = 1;
         AINFO << "publish camera only object : cnt =  " << cnt_cam;
         cnt_cam++;

@@ -289,7 +289,7 @@ void DstTypeFusion::UpdateTypeState() {
   const std::vector<double> &fused_dst_vec = fused_dst_.GetBbaVec();
   auto max_iter = std::max_element(fused_dst_vec.begin(), fused_dst_vec.end());
   size_t max_hyp_ind = max_iter - fused_dst_vec.begin();
-  uint64_t max_hyp = DstManager::Instance()->IndToFodSubset(name_, max_hyp_ind);
+  uint64_t max_hyp = DstManager::Instance()->IndToFodSubset(name_, max_hyp_ind); //由索引返回最大概率的subset
   if (max_hyp == DstMaps::OTHERS_MOVABLE) {
     ADEBUG << "max hyp is UNKNOWN_MOVABLE" << fused_dst_.PrintBba();
   }
@@ -301,7 +301,7 @@ void DstTypeFusion::UpdateTypeState() {
       static_cast<base::ObjectType>(object_type);
   // modify subtype
   auto type = base::kSubType2TypeMap.find(
-      track_ref_->GetFusedObject()->GetBaseObject()->sub_type);
+      track_ref_->GetFusedObject()->GetBaseObject()->sub_type); //由当前测量的subtype对应的type类型
   if (type != base::kSubType2TypeMap.end() &&
       type->second != track_ref_->GetFusedObject()->GetBaseObject()->type) {
     track_ref_->GetFusedObject()->GetBaseObject()->sub_type =

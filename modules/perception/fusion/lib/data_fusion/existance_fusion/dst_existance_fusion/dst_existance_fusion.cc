@@ -139,7 +139,7 @@ void DstExistanceFusion::UpdateWithoutMeasurement(const std::string &sensor_id,
       (camera_object_latest != nullptr &&
        camera_object_latest->GetSensorId() == sensor_id) ||
       (radar_object != nullptr && radar_object->GetSensorId() == sensor_id &&
-       lidar_object == nullptr && camera_object_latest == nullptr)) {
+       lidar_object == nullptr && camera_object_latest == nullptr)) { //存在同样传感器的历史匹配值
     Dst existance_evidence(fused_existance_.Name());
     double unexist_factor = GetUnexistReliability(sensor_id);
     base::ObjectConstPtr obj = track_ref_->GetFusedObject()->GetBaseObject();

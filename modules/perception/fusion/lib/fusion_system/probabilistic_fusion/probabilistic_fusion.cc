@@ -67,7 +67,7 @@ bool ProbabilisticFusion::Init(const FusionInitOptions& init_options) {
   params_.data_association_method = params.data_association_method(); //HMAssociation
   params_.gate_keeper_method = params.gate_keeper_method(); //PbfGatekeeper
   for (int i = 0; i < params.prohibition_sensors_size(); ++i) {
-    params_.prohibition_sensors.push_back(params.prohibition_sensors(i));
+    params_.prohibition_sensors.push_back(params.prohibition_sensors(i)); //radar_front
   }
 
   // static member initialization from PB config
@@ -255,13 +255,13 @@ void ProbabilisticFusion::CreateNewTracks(
     size_t obj_ind = unassigned_obj_inds[i];
 
     bool prohibition_sensor_flag = false;
-    std::for_each(params_.prohibition_sensors.begin(),
+    std::for_each(params_.prohibition_sensors.begin(), //radar_front
                   params_.prohibition_sensors.end(),
                   [&](std::string sensor_name) {
                     if (sensor_name == frame->GetSensorId())
                       prohibition_sensor_flag = true;
                   });
-    if (prohibition_sensor_flag) continue;
+    if (prohibition_sensor_flag) continue; //如果测量传感器是radar　不创建新的track序列
 
     TrackPtr track = TrackPool::Instance().Get();
     track->Initialize(frame->GetForegroundObjects()[obj_ind]);
@@ -282,7 +282,7 @@ void ProbabilisticFusion::CreateNewTracks(
 
 void ProbabilisticFusion::FusebackgroundTrack(const SensorFramePtr& frame) {
   // 1. association
-  size_t track_size = scenes_->GetBackgroundTracks().size();
+  size_t track_size = scenes_->GetBackgroundTracks().size(); //到当前帧为止的所有background track
   size_t obj_size = frame->GetBackgroundObjects().size();
   std::map<int, size_t> local_id_2_track_ind_map;
   std::vector<bool> track_tag(track_size, false);
@@ -291,18 +291,18 @@ void ProbabilisticFusion::FusebackgroundTrack(const SensorFramePtr& frame) {
 
   std::vector<TrackPtr>& background_tracks = scenes_->GetBackgroundTracks();
   for (size_t i = 0; i < track_size; ++i) {
-    const FusedObjectPtr& obj = background_tracks[i]->GetFusedObject();
+    const FusedObjectPtr& obj = background_tracks[i]->GetFusedObject(); //获取background track对应融合object的局部track_id
     int local_id = obj->GetBaseObject()->track_id;
-    local_id_2_track_ind_map[local_id] = i;
+    local_id_2_track_ind_map[local_id] = i; //局部track_id与background_tracks索引的映射
   }
 
   std::vector<SensorObjectPtr>& frame_objs = frame->GetBackgroundObjects();
   for (size_t i = 0; i < obj_size; ++i) {
-    int local_id = frame_objs[i]->GetBaseObject()->track_id;
-    const auto& it = local_id_2_track_ind_map.find(local_id);
-    if (it != local_id_2_track_ind_map.end()) {
+    int local_id = frame_objs[i]->GetBaseObject()->track_id;//当前测量值的局部track_id
+    const auto& it = local_id_2_track_ind_map.find(local_id); //找到对应该局部track_id的background_track
+    if (it != local_id_2_track_ind_map.end()) { //在background_tracks中存在与测量值的局部track_id相同和track
       size_t track_ind = it->second;
-      assignments.push_back(std::make_pair(track_ind, i));
+      assignments.push_back(std::make_pair(track_ind, i)); //对具有相同局部track_id的track和measurement进行匹配
       track_tag[track_ind] = true;
       object_tag[i] = true;
       continue;
@@ -345,7 +345,7 @@ void ProbabilisticFusion::RemoveLostTrack() {
         foreground_tracks[foreground_track_count] = foreground_tracks[i];
         trackers_[foreground_track_count] = trackers_[i];
       }
-      foreground_track_count++;
+      foreground_track_count++; //alive_count
     }
   }
   AINFO << "Remove " << foreground_tracks.size() - foreground_track_count
@@ -373,7 +373,7 @@ void ProbabilisticFusion::CollectFusedObjects(
     double timestamp, std::vector<base::ObjectPtr>* fused_objects) {
   fused_objects->clear();
 
-  size_t fg_obj_num = 0;
+  size_t fg_obj_num = 0; //foreground object num
   const std::vector<TrackPtr>& foreground_tracks =
       scenes_->GetForegroundTracks();
   for (size_t i = 0; i < foreground_tracks.size(); ++i) {
@@ -411,7 +411,7 @@ void ProbabilisticFusion::CollectObjectsByTrack(
   const SensorId2ObjectMap& camera_measurements = track->GetCameraObjects();
   int num_measurements =
       static_cast<int>(lidar_measurements.size() + camera_measurements.size() +
-                       radar_measurements.size());
+                       radar_measurements.size());//该track匹配的各种传感器的测量值
   obj->fusion_supplement.on_use = true;
   std::vector<base::SensorObjectMeasurement>& measurements =
       obj->fusion_supplement.measurements;
