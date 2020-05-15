@@ -133,24 +133,24 @@ bool FusionComponent::InternalProc(
                                            in_message->sensor_id_);
 
   if (in_message->sensor_id_ != fusion_main_sensor_) {
-    return true;
+    return true;// 不为主传感器则不进行发布
   }
 
   Eigen::Matrix4d sensor2world_pose =
       in_message->frame_->sensor2world_pose.matrix();
-  if (object_in_roi_check_ && FLAGS_obs_enable_hdmap_input) {
+  if (object_in_roi_check_ && FLAGS_obs_enable_hdmap_input) { //高精度地图过滤
     // get hdmap
     base::HdmapStructPtr hdmap(new base::HdmapStruct());
     if (hdmap_input_) {
       base::PointD position;
-      position.x = sensor2world_pose(0, 3);
+      position.x = sensor2world_pose(0, 3); //传感器在世界坐标系中的位置
       position.y = sensor2world_pose(1, 3);
       position.z = sensor2world_pose(2, 3);
       hdmap_input_->GetRoiHDMapStruct(position, radius_for_roi_object_check_,
-                                      hdmap);
+                                      hdmap); //120 roi检测半径
       // TODO(use check)
       // ObjectInRoiSlackCheck(hdmap, fused_objects, &valid_objects);
-      valid_objects.assign(fused_objects.begin(), fused_objects.end());
+      valid_objects.assign(fused_objects.begin(), fused_objects.end());　//这里貌似并没有使用roi check
     } else {
       valid_objects.assign(fused_objects.begin(), fused_objects.end());
     }
